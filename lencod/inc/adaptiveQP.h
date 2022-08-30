@@ -6,5 +6,4 @@
 void adaptiveQPInit(int iWidth, int iHeight, unsigned int uiMaxAQDepth);
 void xPreanalyze(int iWidth, int iHeight);
 
-
-#endif // __adaptiveQP__
+#endif  // __adaptiveQP__

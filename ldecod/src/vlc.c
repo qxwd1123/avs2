@@ -1,38 +1,36 @@
 /* The copyright in this software is being made available under the BSD
-* License, included below. This software may be subject to other third party
-* and contributor rights, including patent rights, and no such rights are
-* granted under this license.
-*
-* Copyright (c) 2002-2016, Audio Video coding Standard Workgroup of China
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-*  * Redistributions of source code must retain the above copyright notice,
-*    this list of conditions and the following disclaimer.
-*  * Redistributions in binary form must reproduce the above copyright notice,
-*    this list of conditions and the following disclaimer in the documentation
-*    and/or other materials provided with the distribution.
-*  * Neither the name of Audio Video coding Standard Workgroup of China
-*    nor the names of its contributors maybe used to endorse or promote products
-*    derived from this software without
-*    specific prior written permission.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
-* BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-* THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
-
+ * License, included below. This software may be subject to other third party
+ * and contributor rights, including patent rights, and no such rights are
+ * granted under this license.
+ *
+ * Copyright (c) 2002-2016, Audio Video coding Standard Workgroup of China
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  * Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *  * Neither the name of Audio Video coding Standard Workgroup of China
+ *    nor the names of its contributors maybe used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 /*
 *************************************************************************************
@@ -55,15 +53,14 @@
 #include "vlc.h"
 #include "header.h"
 
-
 // A little trick to avoid those horrible #if TRACE all over the source code
 #if TRACE
-#define SYMTRACESTRING(s) strncpy(sym->tracestring,s,TRACESTRING_SIZE)
+#define SYMTRACESTRING(s) strncpy(sym->tracestring, s, TRACESTRING_SIZE)
 #else
-#define SYMTRACESTRING(s) // do nothing
+#define SYMTRACESTRING(s)  // do nothing
 #endif
 
-extern void tracebits(const char *trace_str,  int len,  int info, int value1);
+extern void tracebits(const char *trace_str, int len, int info, int value1);
 
 /*
 *************************************************************************
@@ -80,17 +77,16 @@ the stream to be read from
 *************************************************************************
 */
 
-int ue_v(char *tracestring)
-{
-    SyntaxElement symbol, *sym = &symbol;
+int ue_v(char *tracestring) {
+  SyntaxElement symbol, *sym = &symbol;
 
-    assert(currStream->streamBuffer != NULL);
-    sym->type = SE_HEADER;
-    sym->mapping = linfo_ue;   // Mapping rule
-    SYMTRACESTRING(tracestring);
-    readSyntaxElement_VLC(sym);
+  assert(currStream->streamBuffer != NULL);
+  sym->type = SE_HEADER;
+  sym->mapping = linfo_ue;  // Mapping rule
+  SYMTRACESTRING(tracestring);
+  readSyntaxElement_VLC(sym);
 
-    return sym->value1;
+  return sym->value1;
 }
 
 /*
@@ -108,18 +104,16 @@ the stream to be read from
 *************************************************************************
 */
 
+int se_v(char *tracestring) {
+  SyntaxElement symbol, *sym = &symbol;
 
-int se_v(char *tracestring)
-{
-    SyntaxElement symbol, *sym = &symbol;
+  assert(currStream->streamBuffer != NULL);
+  sym->type = SE_HEADER;
+  sym->mapping = linfo_se;  // Mapping rule: signed integer
+  SYMTRACESTRING(tracestring);
+  readSyntaxElement_VLC(sym);
 
-    assert(currStream->streamBuffer != NULL);
-    sym->type = SE_HEADER;
-    sym->mapping = linfo_se;   // Mapping rule: signed integer
-    SYMTRACESTRING(tracestring);
-    readSyntaxElement_VLC(sym);
-
-    return sym->value1;
+  return sym->value1;
 }
 
 /*
@@ -137,18 +131,17 @@ the stream to be read from
 *************************************************************************
 */
 
-int u_v(int LenInBits, char *tracestring)
-{
-    SyntaxElement symbol, *sym = &symbol;
+int u_v(int LenInBits, char *tracestring) {
+  SyntaxElement symbol, *sym = &symbol;
 
-    assert(currStream->streamBuffer != NULL);
-    sym->type = SE_HEADER;
-    sym->mapping = linfo_ue;   // Mapping rule
-    sym->len = LenInBits;
-    SYMTRACESTRING(tracestring);
-    readSyntaxElement_FLC(sym);
+  assert(currStream->streamBuffer != NULL);
+  sym->type = SE_HEADER;
+  sym->mapping = linfo_ue;  // Mapping rule
+  sym->len = LenInBits;
+  SYMTRACESTRING(tracestring);
+  readSyntaxElement_FLC(sym);
 
-    return sym->inf;
+  return sym->inf;
 }
 
 /*
@@ -161,9 +154,9 @@ int u_v(int LenInBits, char *tracestring)
 *************************************************************************
 */
 
-void linfo_ue(int len, int info, int *value1, int *dummy)
-{
-    *value1 = (int) pow(2, (len / 2)) + info - 1;        // *value1 = (int)(2<<(len>>1))+info-1;
+void linfo_ue(int len, int info, int *value1, int *dummy) {
+  *value1 = (int)pow(2, (len / 2)) + info -
+            1;  // *value1 = (int)(2<<(len>>1))+info-1;
 }
 
 /*
@@ -176,17 +169,14 @@ void linfo_ue(int len, int info, int *value1, int *dummy)
 *************************************************************************
 */
 
+void linfo_se(int len, int info, int *value1, int *dummy) {
+  int n;
+  n = (int)pow(2, (len / 2)) + info - 1;
+  *value1 = (n + 1) / 2;
 
-void linfo_se(int len,  int info, int *value1, int *dummy)
-{
-    int n;
-    n = (int) pow(2, (len / 2)) + info - 1;
-    *value1 = (n + 1) / 2;
-
-    if ((n & 0x01) == 0) {                      // lsb is signed bit
-        *value1 = -*value1;
-    }
-
+  if ((n & 0x01) == 0) {  // lsb is signed bit
+    *value1 = -*value1;
+  }
 }
 
 /*
@@ -199,14 +189,12 @@ void linfo_se(int len,  int info, int *value1, int *dummy)
 *************************************************************************
 */
 
-
-void linfo_cbp_intra(int len, int info, int *cbp, int *dummy)
-{
-    // extern const byte NCBP[48][2];
-    extern const byte NCBP[64][2];    //jlzheng 7.20
-    int cbp_idx;
-    linfo_ue(len, info, &cbp_idx, dummy);
-    *cbp = NCBP[cbp_idx][0];
+void linfo_cbp_intra(int len, int info, int *cbp, int *dummy) {
+  // extern const byte NCBP[48][2];
+  extern const byte NCBP[64][2];  // jlzheng 7.20
+  int cbp_idx;
+  linfo_ue(len, info, &cbp_idx, dummy);
+  *cbp = NCBP[cbp_idx][0];
 }
 
 /*
@@ -219,13 +207,12 @@ void linfo_cbp_intra(int len, int info, int *cbp, int *dummy)
 *************************************************************************
 */
 
-void linfo_cbp_inter(int len, int info, int *cbp, int *dummy)
-{
-    //extern const byte NCBP[48][2];
-    extern const byte NCBP[64][2];  //cjw 20060321
-    int cbp_idx;
-    linfo_ue(len, info, &cbp_idx, dummy);
-    *cbp = NCBP[cbp_idx][1];
+void linfo_cbp_inter(int len, int info, int *cbp, int *dummy) {
+  // extern const byte NCBP[48][2];
+  extern const byte NCBP[64][2];  // cjw 20060321
+  int cbp_idx;
+  linfo_ue(len, info, &cbp_idx, dummy);
+  *cbp = NCBP[cbp_idx][1];
 }
 
 /*
@@ -239,91 +226,87 @@ map it to the corresponding syntax element
 *************************************************************************
 */
 
+int readSyntaxElement_VLC(SyntaxElement *sym) {
+  int frame_bitoffset = currStream->frame_bitoffset;
+  unsigned char *buf = currStream->streamBuffer;
+  int BitstreamLengthInBytes = currStream->bitstream_length;
 
-int readSyntaxElement_VLC(SyntaxElement *sym)
-{
-    int frame_bitoffset = currStream->frame_bitoffset;
-    unsigned char *buf = currStream->streamBuffer;
-    int BitstreamLengthInBytes = currStream->bitstream_length;
+  sym->len =
+      GetVLCSymbol(buf, frame_bitoffset, &(sym->inf), BitstreamLengthInBytes);
 
-    sym->len =  GetVLCSymbol(buf, frame_bitoffset, & (sym->inf), BitstreamLengthInBytes);
+  if (sym->len == -1) {
+    return -1;
+  }
 
-    if (sym->len == -1) {
-        return -1;
-    }
-
-    currStream->frame_bitoffset += sym->len;
-    sym->mapping(sym->len, sym->inf, & (sym->value1), & (sym->value2));
+  currStream->frame_bitoffset += sym->len;
+  sym->mapping(sym->len, sym->inf, &(sym->value1), &(sym->value2));
 
 #if TRACE
-    tracebits(sym->tracestring, sym->len, sym->inf, sym->value1);
+  tracebits(sym->tracestring, sym->len, sym->inf, sym->value1);
 #endif
 
-    return 1;
+  return 1;
 }
 
+int GetVLCSymbol(unsigned char buffer[], int totbitoffset, int *info,
+                 int bytecount) {
+  register int inf;
+  long byteoffset;  // byte from start of buffer
+  int bitoffset;    // bit from start of byte
+  int ctr_bit = 0;  // control bit for current bit posision
+  int bitcounter = 1;
+  int len;
+  int info_bit;
 
-int GetVLCSymbol(unsigned char buffer[], int totbitoffset, int *info, int bytecount)
-{
+  byteoffset = totbitoffset / 8;
+  bitoffset = 7 - (totbitoffset % 8);
+  ctr_bit = (buffer[byteoffset] & (0x01 << bitoffset));  // set up control bit
 
-    register int inf;
-    long byteoffset;      // byte from start of buffer
-    int bitoffset;      // bit from start of byte
-    int ctr_bit = 0;    // control bit for current bit posision
-    int bitcounter = 1;
-    int len;
-    int info_bit;
+  len = 1;
 
-    byteoffset = totbitoffset / 8;
-    bitoffset = 7 - (totbitoffset % 8);
-    ctr_bit = (buffer[byteoffset] & (0x01 << bitoffset));     // set up control bit
+  while (ctr_bit == 0) {
+    // find leading 1 bit
+    len++;
+    bitoffset -= 1;
+    bitcounter++;
 
-    len = 1;
-
-    while (ctr_bit == 0) {
-        // find leading 1 bit
-        len++;
-        bitoffset -= 1;
-        bitcounter++;
-
-        if (bitoffset < 0) {
-            // finish with current byte ?
-            bitoffset = bitoffset + 8;
-            byteoffset++;
-        }
-
-        ctr_bit = buffer[byteoffset] & (0x01 << (bitoffset));
+    if (bitoffset < 0) {
+      // finish with current byte ?
+      bitoffset = bitoffset + 8;
+      byteoffset++;
     }
 
-    // make infoword
-    inf = 0;                        // shortest possible code is 1, then info is always 0
+    ctr_bit = buffer[byteoffset] & (0x01 << (bitoffset));
+  }
 
-    for (info_bit = 0; (info_bit < (len - 1)); info_bit++) {
-        bitcounter++;
-        bitoffset -= 1;
+  // make infoword
+  inf = 0;  // shortest possible code is 1, then info is always 0
 
-        if (bitoffset < 0) {
-            // finished with current byte ?
-            bitoffset = bitoffset + 8;
-            byteoffset++;
-        }
+  for (info_bit = 0; (info_bit < (len - 1)); info_bit++) {
+    bitcounter++;
+    bitoffset -= 1;
 
-        if (byteoffset > bytecount) {
-            return -1;
-        }
-
-        inf = (inf << 1);
-
-        if (buffer[byteoffset] & (0x01 << (bitoffset))) {
-            inf |= 1;
-        }
+    if (bitoffset < 0) {
+      // finished with current byte ?
+      bitoffset = bitoffset + 8;
+      byteoffset++;
     }
 
-    *info = inf;
+    if (byteoffset > bytecount) {
+      return -1;
+    }
 
-    return bitcounter;           // return absolute offset in bit from start of frame
+    inf = (inf << 1);
+
+    if (buffer[byteoffset] & (0x01 << (bitoffset))) {
+      inf |= 1;
+    }
+  }
+
+  *info = inf;
+
+  return bitcounter;  // return absolute offset in bit from start of frame
 }
-
 
 /*
 *************************************************************************
@@ -335,24 +318,24 @@ int GetVLCSymbol(unsigned char buffer[], int totbitoffset, int *info, int byteco
 *************************************************************************
 */
 
-int readSyntaxElement_FLC(SyntaxElement *sym)
-{
-    int frame_bitoffset = currStream->frame_bitoffset;
-    unsigned char *buf = currStream->streamBuffer;
-    int BitstreamLengthInBytes = currStream->bitstream_length;
+int readSyntaxElement_FLC(SyntaxElement *sym) {
+  int frame_bitoffset = currStream->frame_bitoffset;
+  unsigned char *buf = currStream->streamBuffer;
+  int BitstreamLengthInBytes = currStream->bitstream_length;
 
-    if ((GetBits(buf, frame_bitoffset, & (sym->inf), BitstreamLengthInBytes, sym->len)) < 0) {
-        return -1;
-    }
+  if ((GetBits(buf, frame_bitoffset, &(sym->inf), BitstreamLengthInBytes,
+               sym->len)) < 0) {
+    return -1;
+  }
 
-    currStream->frame_bitoffset += sym->len; // move bitstream pointer
-    sym->value1 = sym->inf;
+  currStream->frame_bitoffset += sym->len;  // move bitstream pointer
+  sym->value1 = sym->inf;
 
 #if TRACE
-    tracebits2(sym->tracestring, sym->len, sym->inf);
+  tracebits2(sym->tracestring, sym->len, sym->inf);
 #endif
 
-    return 1;
+  return 1;
 }
 
 /*
@@ -373,77 +356,75 @@ number of bits to read
 *************************************************************************
 */
 
+int GetBits(unsigned char buffer[], int totbitoffset, int *info, int bytecount,
+            int numbits) {
+  register int inf;
+  long byteoffset;  // byte from start of buffer
+  int bitoffset;    // bit from start of byte
 
-int GetBits(unsigned char buffer[], int totbitoffset, int *info, int bytecount, int numbits)
-{
-    register int inf;
-    long byteoffset;      // byte from start of buffer
-    int bitoffset;      // bit from start of byte
+  int bitcounter = numbits;
 
-    int bitcounter = numbits;
+  byteoffset = totbitoffset / 8;
+  bitoffset = 7 - (totbitoffset % 8);
 
-    byteoffset = totbitoffset / 8;
-    bitoffset = 7 - (totbitoffset % 8);
+  inf = 0;
 
-    inf = 0;
+  while (numbits) {
+    inf <<= 1;
+    inf |= (buffer[byteoffset] & (0x01 << bitoffset)) >> bitoffset;
+    numbits--;
+    bitoffset--;
 
-    while (numbits) {
-        inf <<= 1;
-        inf |= (buffer[byteoffset] & (0x01 << bitoffset)) >> bitoffset;
-        numbits--;
-        bitoffset--;
+    if (bitoffset < 0) {
+      byteoffset++;
+      bitoffset += 8;
 
-        if (bitoffset < 0) {
-            byteoffset++;
-            bitoffset += 8;
-
-            if (byteoffset > bytecount) {
-                return -1;
-            }
-        }
-    }
-
-    *info = inf;
-
-    return bitcounter;           // return absolute offset in bit from start of frame
-}
-
-////////////////////////////////////////////////////////////////////////////
-// Yulj 2004.07.15
-// for decision of slice end.
-////////////////////////////////////////////////////////////////////////////
-int get_uv(int LenInBits, char *tracestring)
-{
-    SyntaxElement symbol, *sym = &symbol;
-
-    assert(currStream->streamBuffer != NULL);
-    sym->mapping = linfo_ue;   // Mapping rule
-    sym->len = LenInBits;
-    SYMTRACESTRING(tracestring);
-    GetSyntaxElement_FLC(sym);
-
-    return sym->inf;
-}
-
-/////////////////////////////////////////////////////////////
-// Yulj 2004.07.15
-// for decision of slice end.
-/////////////////////////////////////////////////////////////
-int GetSyntaxElement_FLC(SyntaxElement *sym)
-{
-    int frame_bitoffset = currStream->frame_bitoffset;
-    unsigned char *buf = currStream->streamBuffer;
-    int BitstreamLengthInBytes = currStream->bitstream_length;
-
-    if ((GetBits(buf, frame_bitoffset, & (sym->inf), BitstreamLengthInBytes, sym->len)) < 0) {
+      if (byteoffset > bytecount) {
         return -1;
+      }
     }
+  }
 
-    sym->value1 = sym->inf;
+  *info = inf;
+
+  return bitcounter;  // return absolute offset in bit from start of frame
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Yulj 2004.07.15
+// for decision of slice end.
+////////////////////////////////////////////////////////////////////////////
+int get_uv(int LenInBits, char *tracestring) {
+  SyntaxElement symbol, *sym = &symbol;
+
+  assert(currStream->streamBuffer != NULL);
+  sym->mapping = linfo_ue;  // Mapping rule
+  sym->len = LenInBits;
+  SYMTRACESTRING(tracestring);
+  GetSyntaxElement_FLC(sym);
+
+  return sym->inf;
+}
+
+/////////////////////////////////////////////////////////////
+// Yulj 2004.07.15
+// for decision of slice end.
+/////////////////////////////////////////////////////////////
+int GetSyntaxElement_FLC(SyntaxElement *sym) {
+  int frame_bitoffset = currStream->frame_bitoffset;
+  unsigned char *buf = currStream->streamBuffer;
+  int BitstreamLengthInBytes = currStream->bitstream_length;
+
+  if ((GetBits(buf, frame_bitoffset, &(sym->inf), BitstreamLengthInBytes,
+               sym->len)) < 0) {
+    return -1;
+  }
+
+  sym->value1 = sym->inf;
 
 #if TRACE
-    tracebits2(sym->tracestring, sym->len, sym->inf);
+  tracebits2(sym->tracestring, sym->len, sym->inf);
 #endif
 
-    return 1;
+  return 1;
 }
