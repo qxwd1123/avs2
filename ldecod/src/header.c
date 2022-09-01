@@ -47,6 +47,7 @@
 #include "../../lcommon/inc/defines.h"
 #include "vlc.h"
 #include "header.h"
+#include "annexb.h"
 #include "AEC.h"
 #include "math.h"
 #include "DecAdaptiveLoopFilter.h"
@@ -207,7 +208,19 @@ void SequenceHeader(char *buf, int startcodepos, int length) {
 
   input->crossSliceLoopFilter = u_v(1, "Cross Loop Filter Flag");
 
+#if BCBR
+  if ((input->profile_id == SCENE_PROFILE ||
+       input->profile_id == SCENE10_PROFILE) &&
+      hd->background_picture_enable) {
+    hd->bcbr_enable = u_v(1, "block_composed_background_picture_enable");
+    u_v(1, "reserved bits");
+  } else {
+    hd->bcbr_enable = 0;
+    u_v(2, "reserved bits");
+  }
+#else
   u_v(2, "reserved bits");
+#endif
 
   img->width = hd->horizontal_size;
   img->height = hd->vertical_size;

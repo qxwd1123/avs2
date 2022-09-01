@@ -40,6 +40,7 @@
 //#include "../../lcommon/inc/memalloc.h"
 //#include "../../lcommon/inc/commonStructures.h"
 //#include "../../lcommon/inc/ComAdaptiveLoopFilter.h"
+#include "../../ldecod/inc/global.h"
 
 #include "commonVariables.h"
 #include "commonStructures.h"
@@ -174,11 +175,12 @@ int check_filtering_unit_boundary_extension(
 }
 
 void filterOneCompRegion(byte *imgRes, byte *imgPad, int stride,
-                         Boolean isChroma, int yPos, int lcuHeight, int xPos,
-                         int lcuWidth, int **filterSet, int *mergeTable,
-                         byte **varImg, int sample_bit_depth, int isLeftAvail,
-                         int isRightAvail, int isAboveAvail, int isBelowAvail,
-                         int isAboveLeftAvail, int isAboveRightAvail) {
+                         Boolean isChroma, int compIdx, int yPos, int lcuHeight,
+                         int xPos, int lcuWidth, int **filterSet,
+                         int *mergeTable, byte **varImg, int sample_bit_depth,
+                         int isLeftAvail, int isRightAvail, int isAboveAvail,
+                         int isBelowAvail, int isAboveLeftAvail,
+                         int isAboveRightAvail) {
   int offset = (1 << ((int)ALF_NUM_BIT_SHIFT - 1));
   byte *imgPad1, *imgPad2, *imgPad3, *imgPad4, *imgPad5, *imgPad6;
 

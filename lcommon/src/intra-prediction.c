@@ -33,6 +33,7 @@
  */
 
 #include <errno.h>
+#include "../../ldecod/inc/global.h"
 #include "intra-prediction.h"
 
 #define Clip(x) (min(255, max(0, (x))))  ///< clip with bit-depth range

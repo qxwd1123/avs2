@@ -94,6 +94,12 @@ void readCIPredMode(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
 int readSyntaxElement_AEC(SyntaxElement *se, DataPartition *this_dataPart,
                           codingUnit *MB, int uiPosition);
 
+#if BCBR
+int readBgFlag();
+void readBgFlag_AEC(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
+                    codingUnit *MB, int uiPosition);
+#endif
+
 int readSplitFlag(int uiBitSize);
 void readSplitFlag_AEC(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
                        codingUnit *MB, int uiPosition);

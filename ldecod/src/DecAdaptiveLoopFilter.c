@@ -154,8 +154,8 @@ void filterOneCTB(byte *pRest, byte *pDec, int stride, int compIdx,
   height = (ctuHeight >> formatShift);
   xpos = (ctuXPos >> formatShift);
   width = (ctuWidth >> formatShift);
-  filterOneCompRegion(pRest, pDec, stride, (compIdx != ALF_Y), ypos, height,
-                      xpos, width, Dec_ALF->m_filterCoeffSym,
+  filterOneCompRegion(pRest, pDec, stride, (compIdx != ALF_Y), compIdx, ypos,
+                      height, xpos, width, Dec_ALF->m_filterCoeffSym,
                       Dec_ALF->m_varIndTab, Dec_ALF->m_varImg, sample_bit_depth,
                       isLeftAvail, isRightAvail, isAboveAvail, isBelowAvail,
                       isAboveLeftAvail, isAboveRightAvail);

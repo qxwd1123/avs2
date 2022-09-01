@@ -96,6 +96,9 @@ void init_contexts() {
   BIARI_CTX_INIT2_LOG(NUM_BLOCK_TYPES, NUM_MAP_CTX, syn->map_contexts);
   BIARI_CTX_INIT2_LOG(NUM_BLOCK_TYPES, NUM_LAST_CTX, syn->last_contexts);
   BIARI_CTX_INIT1_LOG(NUM_SPLIT_CTX, syn->split_contexts);
+#if BCBR
+  BIARI_CTX_INIT1_LOG(NUM_BGBLCOK_CTX, syn->bgblock_contexts);
+#endif
   BIARI_CTX_INIT1_LOG(NUM_TU_CTX, syn->tu_contexts);
   BIARI_CTX_INIT1_LOG(NUM_SIGCG_CTX, syn->sigCG_contexts);
   BIARI_CTX_INIT1_LOG(NUM_LAST_CG_CTX, syn->lastCG_contexts);

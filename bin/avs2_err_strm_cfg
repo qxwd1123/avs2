@@ -1,0 +1,36 @@
+//*******************************************************//
+//*****************avs2 error stream config***********************//
+//*******************************************************//
+//运行参数添加--err 配置文件路径
+//1. 配置项组说明
+//   frame_idx: 帧索引序号, 从1开始, 配置为0代表所有帧
+//   slice_idx: slice索引序号, 从1开始，配置为0代表所有slice
+//   error_idx: 错误语法类型索引号, 按照<avs2 cabac输入输出数据.doc>说明
+//   e_sub_idx: 错误语法子类型，按照<RKVDEC_STRMD_AVS2_VFS.xls>说明
+//   e_enabled: 配置项组是否生效，0: 禁用该配置组，1: 该配置组有效
+//
+//2. 添加配置项组说明
+//   可以同时支持多组错误参数配置，每组配置参数名后缀需要加上组号，如frame_idx1,1为第一组配置
+//   添加完成后，需修改error_groups组数，包括有效和无效的总组数
+//
+//3. 其他注意事项
+//   error_idx为1时, slice_idx需配置为>=1
+//   打开avs2_file_cmode_cfg cabac_err_strm_dbg开关，可以打印stream的信息
+
+#error config
+error_groups                 = 1        # the number group of error config
+error_byenc                  = 0        # must enable the flag when use avs2-encoder to make stream
+
+#[Error Group 1]
+frame_idx1                   = 1        # 0: all frame, 1: 1st frame, 2: 2nd frame...
+slice_idx1                   = 1        # 0: all slice, 1: 1st slice, 2: 2nd slice...
+error_idx1                   = 3
+e_sub_idx1                   = 1
+e_enabled1                   = 0
+
+#[Error Group 2]
+frame_idx2                   = 1
+slice_idx2                   = 3
+error_idx2                   = 14
+e_sub_idx2                   = 1
+e_enabled2                   = 0

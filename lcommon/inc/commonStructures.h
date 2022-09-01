@@ -66,7 +66,7 @@ typedef enum { FALSE, TRUE } Boolean;
 typedef enum {
   FRAME_CODING,
   FIELD_CODING,
-} CodingType; /*CodingType*/
+} CodingType;
 
 enum { FIELD, FRAME };
 
@@ -229,9 +229,10 @@ typedef struct codingUnit {
   int bitcounter[MAX_BITCOUNTER_MB];
   struct codingUnit
       *mb_available[3][3]; /*!< pointer to neighboring MBs in a 3x3 window of
-                 current MB, which is located at [1][1] \n NULL pointer
-                 identifies neighboring MBs which are unavailable */
+             current MB, which is located at [1][1] \n NULL pointer identifies
+             neighboring MBs which are unavailable */
   // some storage of codingUnit syntax elements for global access
+  int real_cuType;
   int cuType;
   int weighted_skipmode;
 
@@ -265,7 +266,6 @@ typedef struct codingUnit {
 #endif
   int block_available_up;
   int block_available_left;
-
 } codingUnit;
 
 // rm52k_r2
@@ -315,7 +315,10 @@ transform and ' Sum of absolute transform difference' in 1/3 pixel search */
   char outfile[1000];    //!< AVS compressed output bitstream
   char TraceFile[1000];  //!< Trace Outputs
   int intra_period;
-
+#if AQPOM4063
+  int GopQpoffset_old;
+  int GopQpoffset;
+#endif
   int fframe_enabled;
 
   int dhp_enabled;
@@ -476,7 +479,9 @@ transform and ' Sum of absolute transform difference' in 1/3 pixel search */
   int bbv_buffer_size;
 
   int bg_enable;
-
+#if BCBR
+  int bcbr_enable;
+#endif
   char bg_file_name[1000];
   int bg_input_number;
   int bg_period;
@@ -504,6 +509,10 @@ transform and ' Sum of absolute transform difference' in 1/3 pixel search */
   int TDEnable;
 #endif
 
+#ifdef M4289_GLOBALLAMBDA
+  int RefLambdaEnable;
+#endif
+
 #ifdef AQPO
   int AQPEnable;
 #endif
@@ -512,6 +521,9 @@ transform and ' Sum of absolute transform difference' in 1/3 pixel search */
   int EncControl;
   int TargetBitRate;
   int ECInitialQP;
+#endif
+#if BGQPO
+  int BGQPOEnable;
 #endif
 
   int MD5Enable;
@@ -556,6 +568,7 @@ typedef struct {
   byte **referenceFrame[3];
   int **refbuf;
   int ***mvbuf;
+  uint64_t **colmv_buf;
   double saorate[NUM_SAO_COMPONENTS];
   byte ***ref;
 
@@ -571,6 +584,9 @@ typedef struct {
 #else
   int ref_poc[4];
 #endif
+
+  int extend_poc;
+  int poc;
 } avs2_frame_t;
 
 typedef struct {
@@ -756,6 +772,19 @@ typedef struct {
   int **ipredmode_curr;
   int **Coeff_all_to_write;
   byte **recon_currY, **recon_currU, **recon_currV;
+#if BCBR
+  byte *org_ref_y;
+  byte *org_ref_u;
+  byte *org_ref_v;
+  int *BLCUidx;
+  int *DQPList;
+  int iNumCUsInFrame;
+
+  byte *org_ref2_y;
+  byte *org_ref2_u;
+  byte *org_ref2_v;
+  int ref2Num;
+#endif
   ////////////////SAO parameter//////////////////
   SAOStatData ***saostatData;      //[SMB][comp][types]
   SAOBlkParam **saoBlkParams;      //[SMB][comp]
@@ -771,6 +800,7 @@ typedef struct {
   int is_top_field;
 #endif
 
+  int extend_poc;
 } ImageParameters;
 
 //! struct for context management
@@ -845,6 +875,10 @@ typedef struct {
 #define NUM_TU_CTX 3
 #define NUM_SPLIT_CTX 8  // CU depth
 
+#if BCBR
+#define NUM_BGBLCOK_CTX 1
+#endif
+
 #define NUM_BRP_CTX 8
 
 #define NUM_LAST_CG_CTX_LUMA 12
@@ -883,6 +917,9 @@ typedef struct {
   BiContextType map_contexts[NUM_BLOCK_TYPES][NUM_MAP_CTX];
   BiContextType last_contexts[NUM_BLOCK_TYPES][NUM_LAST_CTX];
   BiContextType split_contexts[NUM_SPLIT_CTX];
+#if BCBR
+  BiContextType bgblock_contexts[NUM_BGBLCOK_CTX];
+#endif
   BiContextType tu_contexts[NUM_TU_CTX];
   BiContextType lastCG_contexts[NUM_LAST_CG_CTX];
   BiContextType sigCG_contexts[NUM_SIGCG_CTX];

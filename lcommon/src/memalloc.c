@@ -177,6 +177,24 @@ int get_mem2Dint(int ***array2D, int rows, int columns) {
   }
   return rows * columns * sizeof(int);
 }
+
+int get_mem2Duint64_t(uint64_t ***array2D, int rows, int columns) {
+  int i;
+
+  if ((*array2D = (uint64_t **)calloc(rows, sizeof(uint64_t *))) == NULL) {
+    no_mem_exit("get_mem2Dint: array2D");
+  }
+  if (((*array2D)[0] = (uint64_t *)calloc(rows * columns, sizeof(uint64_t))) ==
+      NULL) {
+    no_mem_exit("get_mem2Dint: array2D");
+  }
+
+  for (i = 1; i < rows; i++) {
+    (*array2D)[i] = (*array2D)[i - 1] + columns;
+  }
+  return rows * columns * sizeof(uint64_t);
+}
+
 /*
 *************************************************************************
 * Function:Allocate 3D memory array -> unsigned char
@@ -345,6 +363,21 @@ void free_mem2Dint(int **array2D) {
     error("free_mem2D: trying to free unused memory", 100);
   }
 }
+
+void free_mem2Duint64_t(uint64_t **array2D) {
+  if (array2D) {
+    if (array2D[0]) {
+      free(array2D[0]);
+      array2D[0] = NULL;
+    } else {
+      error("free_mem2D: trying to free unused memory", 100);
+    }
+    free(array2D);
+  } else {
+    error("free_mem2D: trying to free unused memory", 100);
+  }
+}
+
 /*
 *************************************************************************
 * Function:free 3D memory array
@@ -502,6 +535,10 @@ void free_frame_t(avs2_frame_t *currfref) {
       free_mem3Dint(currfref->mvbuf, img->height / MIN_BLOCK_SIZE);
       currfref->mvbuf = NULL;
     }
+    if (currfref->colmv_buf) {
+      free_mem2Duint64_t(currfref->colmv_buf);
+      currfref->colmv_buf = NULL;
+    }
     if (currfref->oneForthRefY) {
       free_mem2D(currfref->oneForthRefY);
       currfref->oneForthRefY = NULL;
@@ -531,6 +568,8 @@ void init_frame_t(avs2_frame_t *currfref) {
                img->width / MIN_BLOCK_SIZE, 2);
   get_mem2Dint(&currfref->refbuf, img->height / MIN_BLOCK_SIZE,
                img->width / MIN_BLOCK_SIZE);
+  get_mem2Duint64_t(&currfref->colmv_buf, img->height / MIN_BLOCK_SIZE,
+                    img->width / MIN_BLOCK_SIZE);
   get_mem2D(&(currfref->oneForthRefY), (img->height + 2 * IMG_PAD_SIZE) * 4,
             (img->width + 2 * IMG_PAD_SIZE) * 4);
 

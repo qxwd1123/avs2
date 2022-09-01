@@ -6,7 +6,7 @@ project(rd)
 cmake_minimum_required(VERSION 2.8.12)
 
 include_directories(lcommon)
-subdirs(lcommon lencod ldecod)
+subdirs(lcommon ldecod)
 
 set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fcommon -fsanitize=address")

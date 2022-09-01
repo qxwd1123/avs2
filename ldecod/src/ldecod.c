@@ -117,6 +117,10 @@
 #include "wquant.h"
 #endif
 
+#ifdef _MSC_VER
+#include <vld.h>
+#endif
+
 #define LOGFILE "log.dec"
 #define DATADECFILE "dataDec.txt"
 #define TRACEFILE "trace_dec.txt"
@@ -125,6 +129,7 @@
 #define _S_IWRITE 0000200 /* write permission, owner */
 
 extern FILE *bits;
+extern byte *seq_checker_buf;
 
 struct inp_par *input;  //!< input parameters from input configuration file
 SNRParameters *snr;     //!< statistics
@@ -279,8 +284,8 @@ void readOneFrameFromDisk(long long int framesize_in_bytes, int FrameNoInFile,
   if (fread(buf, 1, (size_t)framesize_in_bytes, p_img) !=
       (int)framesize_in_bytes) {
     printf(
-        "ReadOneFrame: cannot read %d bytes from input file, unexpected EOF?, "
-        "exiting",
+        "ReadOneFrame: cannot read %lld bytes from input file, unexpected "
+        "EOF?, exiting",
         framesize_in_bytes);
   }
 }
@@ -504,9 +509,22 @@ int main(int argc, char **argv) {
       ;
 
   } while (!IsEndOfBitstream());
+#if RD170_FIX_BG
+  if (input->alf_enable && alfParAllcoated == 1) {
+    ReleaseAlfGlobalBuffer();
+    alfParAllcoated = 0;
+  }
+#else
   if (input->alf_enable) {
     ReleaseAlfGlobalBuffer();
   }
+#endif
+
+  if (seq_checker_buf != NULL) {
+    free(seq_checker_buf);
+    seq_checker_buf = NULL;
+  }
+
   if (StatBitsPtr->time_s == 0) {
     StatBitsPtr->total_bitrate[StatBitsPtr->time_s++] = StatBitsPtr->bitrate;
   }
@@ -533,7 +551,7 @@ int main(int argc, char **argv) {
   }
 #endif
 
-  report(snr);
+  // report(snr);
 
   free_mem2Dint(AVS_SCAN8x8);
   free_mem2Dint(AVS_SCAN16x16);
@@ -553,16 +571,21 @@ int main(int argc, char **argv) {
   ClosePosFile();
 #endif
 
-  fclose(hd->p_out);
-
+  if (hd->p_out) {
+    fclose(hd->p_out);
+    hd->p_out = NULL;
+  }
   if (hd->p_ref) {
     fclose(hd->p_ref);
+    hd->p_ref = NULL;
   }
   if (hd->p_out_background) {
     fclose(hd->p_out_background);
+    hd->p_out_background = NULL;
   }
   if (hd->p_ref_background) {
     fclose(hd->p_ref_background);
+    hd->p_ref_background = NULL;
   }
 
   if (input->MD5Enable & 0x01) {
@@ -601,13 +624,10 @@ int main(int argc, char **argv) {
   free_mem2Dint(AVS_SCAN8x2);
   free_mem2Dint(AVS_SCAN32x8);
   free_mem2Dint(AVS_SCAN8x32);
-
-  free(input);
-
-  free(snr);
-  free(StatBitsPtr);  // 1105
-
-  free(img);
+  if (input) free(input);
+  if (snr) free(snr);
+  if (StatBitsPtr) free(StatBitsPtr);  // 1105
+  if (img) free(img);
   printf(
       "\n=============== Check value bound ==============================\n");
   printf("value_s_bound: %d\n", NUN_VALUE_BOUND);
@@ -979,45 +999,29 @@ void report(SNRParameters *snr) {
 #endif
   fclose(p_log);
 
-#ifdef REPORT
-  {
-    char *ch;
-    FILE *logtable = fopen("DecRD.log", "a+");
-    int i;
-    for (i = strlen(input->reffile); i >= 0 && input->reffile[i] != '\\';
-         ch = &input->reffile[i--])
-      ;
-    fprintf(logtable, "%dx%d\t", img->width, img->height);
-    fprintf(logtable, "%s\t", ch);
-    fprintf(logtable, "%d\t", img->qp);
-    fprintf(logtable, "%.3f\t", hc->tot_time * 0.001);
-    fprintf(logtable, "\n");
-    fclose(logtable);
-  }
-#endif
-
   snprintf(string, OUTSTRING_SIZE, "%s", DATADECFILE);
   p_log = fopen(string, "a");
-
-  if (hc->Bframe_ctr != 0) {  // B picture used
-    fprintf(p_log,
-            "%3d %2d %2d %2.2f %2.2f %2.2f %5d "
-            "%2.2f %2.2f %2.2f %5d "
-            "%2.2f %2.2f %2.2f %5d %.3f\n",
-            img->number, 0, img->qp, snr->snr_y1, snr->snr_u1, snr->snr_v1, 0,
-            0.0, 0.0, 0.0, 0, snr->snr_ya, snr->snr_ua, snr->snr_va, 0,
-            (double)0.001 * hc->tot_time / (img->number + hc->Bframe_ctr - 1));
-  } else {
-    fprintf(p_log,
-            "%3d %2d %2d %2.2f %2.2f %2.2f %5d "
-            "%2.2f %2.2f %2.2f %5d "
-            "%2.2f %2.2f %2.2f %5d %.3f\n",
-            img->number, 0, img->qp, snr->snr_y1, snr->snr_u1, snr->snr_v1, 0,
-            0.0, 0.0, 0.0, 0, snr->snr_ya, snr->snr_ua, snr->snr_va, 0,
-            (double)0.001 * hc->tot_time / img->number);
+  if (p_log) {
+    if (hc->Bframe_ctr != 0) {  // B picture used
+      fprintf(
+          p_log,
+          "%3d %2d %2d %2.2f %2.2f %2.2f %5d "
+          "%2.2f %2.2f %2.2f %5d "
+          "%2.2f %2.2f %2.2f %5d %.3f\n",
+          img->number, 0, img->qp, snr->snr_y1, snr->snr_u1, snr->snr_v1, 0,
+          0.0, 0.0, 0.0, 0, snr->snr_ya, snr->snr_ua, snr->snr_va, 0,
+          (double)0.001 * hc->tot_time / (img->number + hc->Bframe_ctr - 1));
+    } else {
+      fprintf(p_log,
+              "%3d %2d %2d %2.2f %2.2f %2.2f %5d "
+              "%2.2f %2.2f %2.2f %5d "
+              "%2.2f %2.2f %2.2f %5d %.3f\n",
+              img->number, 0, img->qp, snr->snr_y1, snr->snr_u1, snr->snr_v1, 0,
+              0.0, 0.0, 0.0, 0, snr->snr_ya, snr->snr_ua, snr->snr_va, 0,
+              (double)0.001 * hc->tot_time / img->number);
+    }
+    fclose(p_log);
   }
-
-  fclose(p_log);
 }
 
 /*
@@ -1180,12 +1184,19 @@ int init_global_buffers() {
       get_mem2Dint(&(img->ipredmode), img_height / MIN_BLOCK_SIZE + 2,
                    img->width / MIN_BLOCK_SIZE + 2);
 
+#if RD170_FIX_BG
+  get_mem2Dint(&(img->predBlock), (1 << 6), (1 << 6));
+  get_mem2Dint(&(img->predBlockTmp), (1 << 6), (1 << 6));
+  get_mem2Dint(&img->resiY, (1 << 7), (1 << 7));
+
+#else
   get_mem2Dint(&(img->predBlock), (1 << input->g_uiMaxSizeInBit),
                (1 << input->g_uiMaxSizeInBit));
   get_mem2Dint(&(img->predBlockTmp), (1 << input->g_uiMaxSizeInBit),
                (1 << input->g_uiMaxSizeInBit));
   get_mem2Dint(&img->resiY, (1 << (input->g_uiMaxSizeInBit + 1)),
                (1 << (input->g_uiMaxSizeInBit + 1)));
+#endif
   if ((img->quad = (int *)calloc((long long int)(1 << input->sample_bit_depth),
                                  sizeof(int))) == NULL) {
     no_mem_exit("init_img: img->quad");
@@ -1264,6 +1275,13 @@ int init_global_buffers() {
   get_mem2D(&hc->imgY_sao, img->height, img->width);
   get_mem2D(&(hc->imgUV_sao[0]), img->height_cr, img->width_cr);
   get_mem2D(&(hc->imgUV_sao[1]), img->height_cr, img->width_cr);
+#if BCBR
+  // init BCBR related
+  img->iNumCUsInFrame = ((img->width + MAX_CU_SIZE - 1) / MAX_CU_SIZE) *
+                        ((img->height + MAX_CU_SIZE - 1) / MAX_CU_SIZE);
+  img->BLCUidx = (int *)calloc(img->iNumCUsInFrame, sizeof(int));
+  memset(img->BLCUidx, 0, img->iNumCUsInFrame);
+#endif
   return (memory_size);
 }
 
@@ -1361,6 +1379,9 @@ void free_global_buffers() {
   for (j = 0; j < 3; j++) {
     free_mem2D(hc->backgroundReferenceFrame[j]);
   }
+#if BCBR
+  free(img->BLCUidx);
+#endif
 }
 
 /*!

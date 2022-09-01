@@ -268,8 +268,12 @@ void xSetEdgeFilter_One_SMB(unsigned int uiBitSize,
 
   ////////////////////////////////////TU////////////////////////////////////////////////////
   if (currMB->ui_MbBitSize > B8X8_IN_BIT)
+#if RD170_FIX_BG
+    if (currMB->cuType != 8 && currMB->cuType != 9 && currMB->trans_size == 1) {
+#else
     if (currMB->cuType != 8 && currMB->cuType != 9 && currMB->trans_size == 1 &&
         currMB->cbp != 0) {
+#endif
       if (input->useNSQT && currMB->ui_MbBitSize > B8X8_IN_BIT &&
           (currMB->cuType == P2NXN || currMB->cuType == PHOR_UP ||
            currMB->cuType == PHOR_DOWN || currMB->cuType == InNxNMB)) {

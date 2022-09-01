@@ -55,6 +55,7 @@
 #include "annexb.h"
 #include "../../lcommon/inc/memalloc.h"
 #include "AEC.h"
+#include "vlc.h"
 #include "biaridecod.h"
 #include "../../lcommon/inc/loop-filter.h"
 #include "../../lcommon/inc/inter-prediction.h"
@@ -77,6 +78,7 @@ void DecideMvRange();  // rm52k
 unsigned char *temp_slice_buf;
 int first_slice_length;
 int first_slice_startpos;
+char bk_img_is_top_field;
 /* 08.16.2007--for user data after pic header */
 extern void readParaSAO_one_SMB(int smb_index, int mb_y, int mb_x,
                                 int smb_mb_height, int smb_mb_width,
@@ -90,6 +92,137 @@ extern char MD5str[33];
 #if SEQ_CHANGE_CHECKER
 byte *seq_checker_buf = NULL;
 int seq_checker_length = 0;
+#endif
+
+#if BCBR
+void outputBgYUV() {
+  int x, y;
+  FILE *pTest = fopen("BCBR_dec.yuv", "ab");
+  char *buf = (char *)calloc(img->height * img->width * 3 / 2, sizeof(char));
+  // he->background_frame  -> save the yuv infromation of G frame
+
+  for (y = 0; y < img->height; y++) {
+    for (x = 0; x < img->width; x++) {
+      buf[y * img->width + x] = (char)hd->background_frame[0][y][x];
+      if (y % 2 == 0 && x % 2 == 0) {
+        buf[img->height * img->width + y / 2 * img->width / 2 + x / 2] =
+            (char)hd->background_frame[1][y / 2][x / 2];
+        buf[img->height * img->width * 5 / 4 + y / 2 * img->width / 2 + x / 2] =
+            (char)hd->background_frame[2][y / 2][x / 2];
+      }
+    }
+  }
+
+  fwrite(buf, sizeof(char), img->height * img->width * 3 / 2, pTest);
+  fclose(pTest);
+  free(buf);
+}
+
+void updateBgReference() {
+  int x, y, cx, cy, tempx, tempy, iLCUIdx;
+  int iFrameWidthInCU = (img->width + MAX_CU_SIZE - 1) / (MAX_CU_SIZE);
+  int img_number = img->tr + hc->total_frames * 256;
+  // printf("Test: %d\n",img->number);
+
+  for (y = 0; y < img->height; y += MAX_CU_SIZE) {
+    for (x = 0; x < img->width; x += MAX_CU_SIZE) {
+      iLCUIdx = (y / MAX_CU_SIZE) * iFrameWidthInCU + (x / MAX_CU_SIZE);
+      if (img->BLCUidx[iLCUIdx] == img_number || img->type == INTRA_IMG) {
+        for (tempy = 0; tempy < MAX_CU_SIZE; tempy++) {
+          for (tempx = 0; tempx < MAX_CU_SIZE; tempx++) {
+            if (y + tempy >= img->height || x + tempx >= img->width) {
+              break;
+            }
+            hd->background_frame[0][y + tempy][x + tempx] =
+                hc->imgY[y + tempy][x + tempx];
+            if ((y + tempy) % 2 == 0 && (x + tempx) % 2 == 0) {
+              cx = (x + tempx) / 2;
+              cy = (y + tempy) / 2;
+              hd->background_frame[1][cy][cx] = hc->imgUV[0][cy][cx];
+              hd->background_frame[2][cy][cx] = hc->imgUV[1][cy][cx];
+            }
+          }
+        }
+      }
+    }
+  }
+#if OUTPUT_BCBR
+  outputBgYUV();
+#endif
+  return;
+}
+
+#endif
+
+#if RD170_FIX_BG
+void delete_trbuffer(outdata *data, int pos);
+void flushDPB(void) {
+  int j, tmp_min, i, pos = -1;
+  int search_times = outprint.buffer_num;
+
+  tmp_min = 1 << 20;
+  i = 0, j = 0;
+  pos = -1;
+
+  for (j = 0; j < search_times; j++) {
+    pos = -1;
+    tmp_min = (1 << 20);
+    // search for min poi picture to display
+    for (i = 0; i < outprint.buffer_num; i++) {
+      if (outprint.stdoutdata[i].tr < tmp_min) {
+        pos = i;
+        tmp_min = outprint.stdoutdata[i].tr;
+      }
+    }
+
+    if (pos != -1) {
+      hd->last_output = outprint.stdoutdata[pos].tr;
+      report_frame(outprint, pos);
+      if (outprint.stdoutdata[pos].typeb == BACKGROUND_IMG &&
+          outprint.stdoutdata[pos].background_picture_output_flag == 0) {
+        write_GB_frame(hd->p_out_background);
+      } else {
+        write_frame(hd->p_out, outprint.stdoutdata[pos].tr);
+      }
+
+      delete_trbuffer(&outprint, pos);
+    }
+  }
+
+  // clear dpb info
+  for (j = 0; j < REF_MAXBUFFER; j++) {
+    fref[j]->imgtr_fwRefDistance = -256;
+    fref[j]->imgcoi_ref = -257;
+    fref[j]->temporal_id = -1;
+    fref[j]->refered_by_others = 0;
+  }
+}
+#endif
+
+#if M3480_TEMPORAL_SCALABLE
+void cleanRefMVBufRef(int pos) {
+  int k, x, y;
+  // re-init mvbuf
+  for (k = 0; k < 2; k++) {
+    for (y = 0; y < img->height / MIN_BLOCK_SIZE; y++) {
+      for (x = 0; x < img->width / MIN_BLOCK_SIZE; x++) {
+        fref[pos]->mvbuf[y][x][k] = 0;
+      }
+    }
+  }
+  // re-init refbuf
+  for (y = 0; y < img->height / MIN_BLOCK_SIZE; y++) {
+    for (x = 0; x < img->width / MIN_BLOCK_SIZE; x++) {
+      fref[pos]->refbuf[y][x] = -1;
+    }
+  }
+  // re-init colmvbuf
+  for (y = 0; y < img->height / MIN_BLOCK_SIZE; y++) {
+    for (x = 0; x < img->width / MIN_BLOCK_SIZE; x++) {
+      fref[pos]->colmv_buf[y][x] = 0;
+    }
+  }
+}
 #endif
 /*
 *************************************************************************
@@ -178,6 +311,16 @@ int decode_one_frame(SNRParameters *snr) {
   }
 
   if (img->new_sequence_flag && img->sequence_end_flag) {
+#if RD170_FIX_BG
+    int k;
+    flushDPB();
+    for (k = 0; k < REF_MAXBUFFER; k++) {
+      cleanRefMVBufRef(k);
+    }
+    free_global_buffers();
+    img->number = 0;
+#endif
+
     hd->end_SeqTr = img->tr;
     img->sequence_end_flag = 0;
   }
@@ -186,6 +329,19 @@ int decode_one_frame(SNRParameters *snr) {
     hd->next_IDRcoi = img->coding_order;
     img->new_sequence_flag = 0;
   }
+
+#if RD170_FIX_BG
+  if (hd->vec_flag) {
+    int k;
+    flushDPB();
+    for (k = 0; k < REF_MAXBUFFER; k++) {
+      cleanRefMVBufRef(k);
+    }
+    hd->vec_flag = 0;
+    free_global_buffers();
+    img->number = 0;
+  }
+#endif
 
   // allocate memory for frame buffers
 
@@ -205,7 +361,8 @@ int decode_one_frame(SNRParameters *snr) {
 
   picture_data();
 
-  if (img->typeb == BACKGROUND_IMG && hd->background_picture_enable) {
+  if (img->typeb == BACKGROUND_IMG &&
+      hd->background_picture_enable) {  // update G/GB referframe
     int l;
     for (l = 0; l < img->height; l++) {
       memcpy(hd->background_frame[0][l], hc->imgY[l],
@@ -219,12 +376,19 @@ int decode_one_frame(SNRParameters *snr) {
     }
   }
 
+#if BCBR
+  if (hd->background_picture_enable && hd->bcbr_enable && img->number > 0) {
+    updateBgReference();
+  }
+#endif
+
   if (img->typeb == BACKGROUND_IMG && hd->background_picture_output_flag == 0) {
     hd->background_number++;
   }
 
   if (img->type == B_IMG) {
     fref[0]->imgtr_fwRefDistance = hd->trtmp;
+    fref[0]->poc = hd->b_poc;
   }
 
   img->height = (hd->vertical_size + img->auto_crop_bottom);
@@ -336,17 +500,16 @@ int decode_one_frame(SNRParameters *snr) {
 *************************************************************************
 */
 void report_frame(outdata data, int pos) {
-  FILE *file;
   char *Frmfld;
   char Frm[] = "FRM";
   char Fld[] = "FLD";
   STDOUT_DATA *p_stdoutdata = &data.stdoutdata[pos];
   const char *typ;
 
-  file = fopen("stat.dat", "at");
+  FILE *file = fopen("stat.dat", "at");
 
   if (input->MD5Enable & 0x02) {
-    sprintf(MD5str, "%08X%08X%08X%08X\0", p_stdoutdata->DecMD5Value[0],
+    sprintf(MD5str, "%08X%08X%08X%08X\n", p_stdoutdata->DecMD5Value[0],
             p_stdoutdata->DecMD5Value[1], p_stdoutdata->DecMD5Value[2],
             p_stdoutdata->DecMD5Value[3]);
   } else {
@@ -373,7 +536,10 @@ void report_frame(outdata data, int pos) {
     }
   }
   if ((p_stdoutdata->tr + hc->total_frames * 256) == hd->next_IDRtr) {
-    if (hd->vec_flag) {
+#if !RD170_FIX_BG
+    if (hd->vec_flag)
+#endif
+    {
       hd->vec_flag = 0;
       fprintf(stdout, "Video Edit Code\n");
     }
@@ -394,24 +560,24 @@ void report_frame(outdata data, int pos) {
               : (p_stdoutdata->type == F_IMG ? "F" : "B");
 #endif
   }
+  if (file) {
+    fprintf(file, "%3d(%s)  %3d %5d %7.4f %7.4f %7.4f %5d\t\t%s %8d %6d\t%s",
+            p_stdoutdata->framenum + hc->total_frames * 256, typ,
+            p_stdoutdata->tr + hc->total_frames * 256, p_stdoutdata->qp,
+            p_stdoutdata->snr_y, p_stdoutdata->snr_u, p_stdoutdata->snr_v,
+            p_stdoutdata->tmp_time, Frmfld, p_stdoutdata->curr_frame_bits,
+            p_stdoutdata->emulate_bits, MD5str);
+    // printf("%3d(%s)  %3d %5d %7.4f %7.4f %7.4f %5d\t\t%s %8d %6d\t%s",
+    //        p_stdoutdata->framenum + hc->total_frames * 256, typ,
+    //        p_stdoutdata->tr + hc->total_frames * 256, p_stdoutdata->qp,
+    //        p_stdoutdata->snr_y, p_stdoutdata->snr_u, p_stdoutdata->snr_v,
+    //        p_stdoutdata->tmp_time, Frmfld, p_stdoutdata->curr_frame_bits,
+    //        p_stdoutdata->emulate_bits, MD5str);
 
-  fprintf(file, "%3d(%s)  %3d %5d %7.4f %7.4f %7.4f %5d\t\t%s %8d %6d\t%s",
-          p_stdoutdata->framenum + hc->total_frames * 256, typ,
-          p_stdoutdata->tr + hc->total_frames * 256, p_stdoutdata->qp,
-          p_stdoutdata->snr_y, p_stdoutdata->snr_u, p_stdoutdata->snr_v,
-          p_stdoutdata->tmp_time, Frmfld, p_stdoutdata->curr_frame_bits,
-          p_stdoutdata->emulate_bits, MD5str);
-  printf("%3d(%s)  %3d %5d %7.4f %7.4f %7.4f %5d\t\t%s %8d %6d\t%s",
-         p_stdoutdata->framenum + hc->total_frames * 256, typ,
-         p_stdoutdata->tr + hc->total_frames * 256, p_stdoutdata->qp,
-         p_stdoutdata->snr_y, p_stdoutdata->snr_u, p_stdoutdata->snr_v,
-         p_stdoutdata->tmp_time, Frmfld, p_stdoutdata->curr_frame_bits,
-         p_stdoutdata->emulate_bits, MD5str);
-
-  fprintf(file, " %s\n", p_stdoutdata->str_reference_list);
-  printf(" %s\n", p_stdoutdata->str_reference_list);
-
-  fclose(file);
+    fprintf(file, " %s\n", p_stdoutdata->str_reference_list);
+    // printf(" %s\n", p_stdoutdata->str_reference_list);
+    fclose(file);
+  }
   fflush(stdout);
   hd->FrameNum++;
 }
@@ -993,25 +1159,7 @@ void find_snr_background(SNRParameters *snr,
   free(buf);
 }
 
-#if M3480_TEMPORAL_SCALABLE
-void cleanRefMVBufRef(int pos) {
-  int k, x, y;
-  // re-init mvbuf
-  for (k = 0; k < 2; k++) {
-    for (y = 0; y < img->height / MIN_BLOCK_SIZE; y++) {
-      for (x = 0; x < img->width / MIN_BLOCK_SIZE; x++) {
-        fref[pos]->mvbuf[y][x][k] = 0;
-      }
-    }
-  }
-  // re-init refbuf
-  for (y = 0; y < img->height / MIN_BLOCK_SIZE; y++) {
-    for (x = 0; x < img->width / MIN_BLOCK_SIZE; x++) {
-      fref[pos]->refbuf[y][x] = -1;
-    }
-  }
-}
-#endif
+int extendPoc = 1;
 
 void prepare_RefInfo() {
   int i, j;
@@ -1035,7 +1183,9 @@ void prepare_RefInfo() {
 
 #if REMOVE_UNUSED
     for (j = i; j < REF_MAXBUFFER; j++) {  ///////////////to be modified  IDR
-      if (fref[j]->imgcoi_ref == img->coding_order - hd->curr_RPS.ref_pic[i]) {
+      if (fref[j]->imgcoi_ref ==
+          img->coding_order -
+              hd->curr_RPS.ref_pic[i]) {  // find refers and take it front
         break;
       }
     }
@@ -1126,10 +1276,16 @@ void prepare_RefInfo() {
     i--;
   }
 
+  fref[i]->extend_poc = extendPoc;
   hc->f_rec = fref[i];
   hc->currentFrame = hc->f_rec->ref;
-  hc->f_rec->imgtr_fwRefDistance = img->tr;
-  hc->f_rec->imgcoi_ref = img->coding_order;
+  img->extend_poc = fref[i]->extend_poc;
+  extendPoc++;
+  extendPoc = (extendPoc >= (1 << 20)) ? 0 : extendPoc;
+
+  hc->f_rec->imgtr_fwRefDistance = img->tr;  // tr: temporal reference, is POI
+  hc->f_rec->poc = img->tr;
+  hc->f_rec->imgcoi_ref = img->coding_order;  // coding_order: DOI
 #if M3480_TEMPORAL_SCALABLE
   hc->f_rec->temporal_id = hd->cur_layer;
 #endif
@@ -1138,22 +1294,22 @@ void prepare_RefInfo() {
 
   if (img->type != B_IMG) {
     for (j = 0; j < img->num_of_references; j++) {
-      hc->f_rec->ref_poc[j] = fref[j]->imgtr_fwRefDistance;
+      hc->f_rec->ref_poc[j] = fref[j]->poc;
     }
-  } else {
-    hc->f_rec->ref_poc[0] = fref[1]->imgtr_fwRefDistance;
-    hc->f_rec->ref_poc[1] = fref[0]->imgtr_fwRefDistance;
+  } else {  // B frame
+    hc->f_rec->ref_poc[0] = fref[1]->poc;
+    hc->f_rec->ref_poc[1] = fref[0]->poc;
   }
 
 #if M3480_TEMPORAL_SCALABLE
 
-  for (j = img->num_of_references; j < 4; j++) {
+  for (j = img->num_of_references; j < MAXREF; j++) {
     hc->f_rec->ref_poc[j] = 0;
   }
 
   if (img->type == INTRA_IMG) {
     int l;
-    for (l = 0; l < 4; l++) {
+    for (l = 0; l < MAXREF; l++) {
       hc->f_rec->ref_poc[l] = img->tr;
     }
   }
@@ -1201,10 +1357,14 @@ void prepare_RefInfo() {
         img->type == B_IMG ? fref[0]->imgtr_fwRefDistance : img->tr;
     if (img->type == B_IMG) {
       hd->trtmp = fref[0]->imgtr_fwRefDistance;
+      hd->extend_poc = fref[0]->extend_poc;
       fref[0]->imgtr_fwRefDistance = fref[1]->imgtr_fwRefDistance;
+      hd->b_poc = fref[0]->poc;
+      fref[0]->poc = fref[1]->poc;
     }
   }
 
+#if !RD170_FIX_BG
   {
     int k, x, y, ii;
 #if B_BACKGROUND_Fix
@@ -1218,12 +1378,14 @@ void prepare_RefInfo() {
             if (img->typeb == BP_IMG) {
               fref[ii]->mvbuf[y][x][k] = 0;
               fref[ii]->refbuf[y][x] = 0;
+              fref[ii]->delta_poc[y][x] = 0;
             }
           }
         }
       }
     }
   }
+#endif
 }
 #if Mv_Rang  // M3959 he-yuan.lin@mstarsemi.com
 void check_mv_boundary(int pos_x, int pos_y, int dx, int dy, int block_width,
@@ -1254,9 +1416,8 @@ void check_mv_boundary(int pos_x, int pos_y, int dx, int dy, int block_width,
   }
 
   if (is_out_of_boundary) {
-    printf(
-        "Non-conformance stream: invalid reference block (x, y) = (%d, %d)\n",
-        pos_x, pos_y);
+    // printf("Non-conformance stream: invalid reference block (x, y) = (%d,
+    // %d)\n", pos_x, pos_y);
   }
 }
 #endif
@@ -1271,9 +1432,7 @@ void check_mv_boundary(int pos_x, int pos_y, int dx, int dy, int block_width,
 */
 void get_block(int ref_frame, int x_pos, int y_pos, int step_h, int step_v,
                int block[MAX_CU_SIZE][MAX_CU_SIZE], byte **ref_pic, int ioff,
-               int joff
-
-) {
+               int joff) {
   int max_pel_value = (1 << input->sample_bit_depth) - 1;
   int shift1 = input->sample_bit_depth - 8;
   int shift2 = 14 - input->sample_bit_depth;
@@ -1313,17 +1472,15 @@ void get_block(int ref_frame, int x_pos, int y_pos, int step_h, int step_v,
 #endif
   if (hd->background_reference_enable &&
       ref_frame == img->num_of_references - 1 &&
-      (img->type == P_IMG || img->type == F_IMG) && img->typeb != BP_IMG) {
+      (img->type == P_IMG || img->type == F_IMG) &&
+      img->typeb != BP_IMG) {  // P/F frame refer G/GB
     p_ref = hd->background_frame[0];
   } else if (img->typeb == BP_IMG) {
     p_ref = hd->background_frame[0];
-  }
-
-  else {
+  } else {
     p_ref = ref_pic;
   }
-
-  if (dx == 0 && dy == 0) {
+  if (dx == 0 && dy == 0) {  // x && y located Integer pixel
     for (j = 0; j < step_v; j++) {
       for (i = 0; i < step_h; i++) {
         block[j][i] = p_ref[max(0, min(maxold_y, y_pos + j))]
@@ -1423,7 +1580,46 @@ int Header() {
             fprintf(
                 stdout,
                 "Non-conformance stream: sequence header cannot change !!\n");
+#if RD170_FIX_BG
+            seq_checker_buf = NULL;
+            seq_checker_length = 0;
+            seq_checker_buf = malloc(length);
+            seq_checker_length = length;
+            memcpy(seq_checker_buf, Buf, length);
+#endif
           }
+        }
+#endif
+#if RD170_FIX_BG
+        if (input->alf_enable && alfParAllcoated == 1) {
+          ReleaseAlfGlobalBuffer();
+          alfParAllcoated = 0;
+        }
+#endif
+#if FIX_FLUSH_DPB_BY_LF
+        if (hd->vec_flag) {
+          int k;
+          flushDPB();
+          for (k = 0; k < REF_MAXBUFFER; k++) {
+            cleanRefMVBufRef(k);
+          }
+          hd->vec_flag = 0;
+          free_global_buffers();
+          img->number = 0;
+          img->PrevPicDistanceLsb = 0;
+        }
+#endif
+
+#if FIX_SEQ_END_FLUSH_DPB_BY_LF
+        if (img->new_sequence_flag && img->sequence_end_flag) {
+          int k;
+          flushDPB();
+          for (k = 0; k < REF_MAXBUFFER; k++) {
+            cleanRefMVBufRef(k);
+          }
+          free_global_buffers();
+          img->number = 0;
+          img->PrevPicDistanceLsb = 0;
         }
 #endif
         SequenceHeader(Buf, startcodepos, length);
@@ -1576,11 +1772,18 @@ void init_frame() {
   }
 #endif
 
-  if (img->typeb == BACKGROUND_IMG && hd->background_picture_output_flag == 0) {
+  if (img->typeb == BACKGROUND_IMG &&
+      hd->background_picture_output_flag == 0) {  // current is GB
     hc->currentFrame = hc->background_ref;
   } else {
     prepare_RefInfo();
   }
+
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+  if (img->typeb == BACKGROUND_IMG && img->is_field_sequence) {
+    bk_img_is_top_field = img->is_top_field;
+  }
+#endif
 
   hc->imgY = hc->currentFrame[0];
   hc->imgUV = &hc->currentFrame[1];
@@ -1666,6 +1869,11 @@ void picture_data() {
         new_slice = 1;
       } else {
         if (checkstartcode()) {
+#if M4140_END_OF_SLICE_CHECKER
+          if (aec_mb_stuffing_bit == 0)
+            printf(
+                "Error Stream: This slice has invalid aec_mb_stuffing_bit\n");
+#endif
           GetOneUnit(Buf, &startcodepos, &length);
           StatBitsPtr->curr_frame_bits += length;
           SliceHeader(Buf, startcodepos, length);
@@ -1767,6 +1975,12 @@ void picture_data() {
 
     aec_mb_stuffing_bit = AEC_startcode_follows(1);
   }
+#if M4140_END_OF_SLICE_CHECKER
+  if (checkstartcode() != 1)
+    printf("Error Stream: Last slices has invalid stuffing pattern\n");
+  if (aec_mb_stuffing_bit == 0)
+    printf("Error Stream: This slice has invalid aec_mb_stuffing_bit\n");
+#endif
 
   free(Buf);
 
@@ -1881,7 +2095,8 @@ void compressMotion() {
 
   for (y = 0; y < height / MIN_BLOCK_SIZE; y++) {
     for (x = 0; x < width / MIN_BLOCK_SIZE; x++) {
-      yPos = y / MV_DECIMATION_FACTOR * MV_DECIMATION_FACTOR + 2;
+      yPos =
+          y / MV_DECIMATION_FACTOR * MV_DECIMATION_FACTOR + 2;  // store mv[2,2]
       xPos = x / MV_DECIMATION_FACTOR * MV_DECIMATION_FACTOR + 2;
 
       if (yPos >= height / MIN_BLOCK_SIZE) {
@@ -1952,6 +2167,9 @@ void frame_postprocessing() {
 #endif
   outprint.buffer_num++;
 
+#if RD170_FIX_BG
+  search_times = outprint.buffer_num;
+#endif
   // record the reference list
   strcpy(p_outdata->str_reference_list, hc->str_list_reference);
 
@@ -2054,8 +2272,8 @@ void frame_postprocessing() {
       p_outdata->DecMD5Value[j] = MD5val[j];
     }
   }
-
-  if (hd->curr_RPS.referd_by_others && img->type != I_IMG) {
+  if (hd->curr_RPS.referd_by_others &&
+      img->type != I_IMG) {  // refered && P/B/F
     addCurrMvtoBuf();
     compressMotion();
   }
@@ -2066,7 +2284,7 @@ void frame_postprocessing() {
         outprint.stdoutdata[pos].tr == (hd->last_output + 1)) {
       hd->last_output = outprint.stdoutdata[pos].tr;
       report_frame(outprint, pos);
-      write_frame(hd->p_out, outprint.stdoutdata[pos].tr);
+      if (hd->p_out) write_frame(hd->p_out, outprint.stdoutdata[pos].tr);
       delete_trbuffer(&outprint, pos);
       i--;
     } else {
@@ -2094,7 +2312,7 @@ void frame_postprocessing() {
     }
 
     if ((0 == hd->displaydelay) && (0 == output_cur_dec_pic)) {
-      if (img->tr < tmp_min) {
+      if (img->tr <= tmp_min) {  ////fred.chiu@mediatek.com
         // output current decode picture right now
         pos = outprint.buffer_num - 1;
         output_cur_dec_pic = 1;

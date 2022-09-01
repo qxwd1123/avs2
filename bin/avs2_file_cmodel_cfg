@@ -1,0 +1,245 @@
+
+##########################################################################################
+## enable for control module running
+##=================================                 
+CABAC_MODULE_EN                = 1               # CABAC/CALVC module                      
+DECCTL_MODULE_EN               = 1              # dec_ctl module                      
+INTER_MODULE_EN                = 1             # Inter module                      
+INTRA_RECON_MODULE_EN          = 0             # Intra module                      
+IQIT_MODULE_EN                 = 0              # iQiT module
+LOOPFILTER_MODULE_EN           = 0              # Loopfilter module
+REG_MODULE_EN                  = 1              # register module
+HW_COMM_MODULE_EN              = 0              # HW common features module, e.g statistic
+
+FPGA_EN                        = 0              # write FPGA data, fwrite data
+ZEBU_EN                        = 0              # write ZEBU data, printf data via 32bit mode
+##########################################################################################
+## DEBUG log control module printf, note that error info must be printed
+##=================================  
+DEBUG_FILE_NAME                = avs2_debug.txt 
+
+DEBUG_HARDWARE_EN              = 0              # hardware
+DEBUG_CABAC_EN                 = 0              # CABAC/CALVC                      
+DEBUG_DECCTL_EN                = 0              # dec_ctl                      
+DEBUG_INTER_EN                 = 0              # Inter                      
+DEBUG_INTRA_RECON_EN           = 0              # Intra                      
+DEBUG_IQIT_EN                  = 0              # iQiT
+DEBUG_LOOPFILTER_EN            = 0              # Loopfilter
+DEBUG_REG_EN                   = 0              # register
+
+##########################################################################################
+AVS_FAST_SEEK                  = 0              # fast seek to nearest sequence header
+
+##########################################################################################
+## CABAC_MODULE
+##=================================
+#cabac_seq_pic_bin              = cabac_seq_pic_bin.dat          # seq pic header, align 64bit
+#cabac_seq_pic_bin_128          = cabac_seq_pic_bin_128.dat      # seq pic header, align 128bit
+#cabac_seq_pic_dbg              = cabac_seq_pic_dbg.txt          # seq pic header debug file
+#cabac_scalist_bin              = scanlist.dat                   # scan list data align 64bit
+#cabac_scalist_bin_128          = iqit_scanlist.dat              # scan list data align 128bit
+#cabac_stream_in_bin            = cabac_stream_in_bin.dat        # slice data, no contain 000001
+#cabac_rbsp_bin                 = stream_in.dat                  # slice data, contain 000001 align 64bit
+#cabac_rbsp_bin_128             = cabac_rbsp_bin_128.dat         # slice data, contain 000001 align 128bit
+#cabac_slice_len_bin            = cabac_slice_length.dat         # per slice data length, contain 000001
+#cabac_rbsp_size_bin            = cabac_frame_size.dat           # all siice data length, slice count
+#cabac_rlc_in_bin               = cabac_rlc_in_bin.dat
+#cabac_rlc_in_dbg               = cabac_rlc_in_dbg.txt
+#cabac_syntax_dbg               = cabac_syntax_dbg.txt
+#cabac_ctx_bin                  = cabac_ctx_bin.dat
+#cabac_ctx_dbg                  = cabac_ctx_dbg.txt
+#cabac_err_strm_bin              = error_stream.dat
+#cabac_err_strm_bin_128          = error_stream128.dat
+#cabac_err_strm_dbg              = stream_info.txt
+#cabac_err_roi_stat              = roi_stat.txt
+
+##########################################################################################
+## DEC_CTL_MODULE
+##=================================
+#decctl_state_dbg                = decctl_state_dbg.txt          # debug file,decctl state and bit
+#decctl_global_param             = decctl_global_param.txt       # debug file,decctl bit value
+
+#decctl_inter_cmd                = decctl_inter_cmd.dat          # decctl to inter cmd
+#decctl_inter_cmd_dbg            = decctl_inter_cmd_dbg.txt      # debug file, decctl to inter cmd
+#decctl_intra_cmd                = decctl_intra_cmd.dat          # decctl to intra cmd
+#decctl_intra_cmd_dbg            = decctl_intra_cmd_dbg.txt      # debug file, decctl to intra cmd
+#decctl_iqit_cmd                 = iqit_cmd_in.dat               # decctl to iqit cmd
+#decctl_iqit_cmd_dbg             = iqit_cmd_in_dbg.txt           # debug file, decctl to iqit cmd
+#decctl_iqit_transd0             = decctl_iqit_transd0.dat       # decctl to iqit transd data0
+#decctl_iqit_transd1             = decctl_iqit_transd1.dat       # decctl to iqit transd data1
+#decctl_lft_cmd                  = decctl_lft_cmd.dat            # decctl to loopfilter cmd
+#decctl_lft_cmd_dbg              = decctl_lft_cmd_dbg.txt        # debug file, decctl to loopfilter cmd
+#decctl_iqit_data_in             = iqit_data_in.dat              # decctl to iqit transd data,for iqit input
+#decctl_iqit_data_in_dbg         = iqit_data_in_dbg.txt          # decctl to iqit transd data,for iqit dbg
+
+##########################################################################################
+## TRANSD_MODULE
+##=================================
+#transd_global_para            = iqit_para.dat                  # global parameter such bitdepth and dec_mode
+#transd_iq_data_out            = iq_data_out.dat                # the output data of iq cal done
+#transd_ul4x4_1st_out	       = it_1st_cal4x4_data_out.dat     # the top left 4x4 first time transform data out
+#transd_ul4x4_2st_out          = it_2st_cal4x4_data_out.dat     # the top left 4x4 second time transform data out
+#transd_ul4x4_info             = it_up_cal4x4_info.dat          # the top left 4x4 transform info
+#transd_tu_1st_out             = it_1st_tu_data_out.dat         # all the tu block first time transform data out
+#transd_tu_2st_out             = it_2st_tu_data_out.dat         # all the tu block second time transform data out
+#transd_tu_2st_out_debug       = it_2st_tu_data_out_debug.dat   # all the tu block second time transform data out
+#transd_tu_out                 = it_tu_data_out.dat			    # all the tu block second time transform data out and scale up
+#transd_data2rec_y             = iqit_y_dataout.dat             # the luma transfrom data write to recon								  
+#transd_data2rec_u             = iqit_u_dataout.dat             # the chro u transfrom data write to recon	
+#transd_data2rec_v             = iqit_v_dataout.dat             # the chro u transfrom data write to recon	
+
+##########################################################################################
+#INTER_MODULE
+##=================================
+#inter_ref_frame                        = inter_ref_frame.dat                  # refer frame data which no  compression
+#inter_ref_frame_debug                  = inter_ref_frame_debug.csv            # for debug, refer frame 
+#inter_dec_frame                        = inter_dec_frame.dat                  # recorn frame after loopfilter
+#inter_dec_frame_debug                  = inter_dec_frame_debug.csv            # for debug, recorn frame after loopfilter
+#inter_ref_colmv                        = inter_colmv_ref.dat                  # refer frame's colmv data which no  compression
+inter_cur_colmv                        = inter_colmv_cur.dat                  # current colmv after loopfilter
+inter_dpb_frame                        = dpb_buffer.dat 
+#inter_colmv_global                     = inter_colmv_global.dat
+#inter_colmv_slice                      = inter_colmv_slice.dat
+#inter_co_colmv128                      = inter_co_colmv128.dat                # co frame's colmv data which no compression
+#inter_co_colmv_enc128                  = inter_co_colmv_enc128.dat            # co frame's colmv data which compression
+#inter_cur_colmv128                     = inter_colmv128_cur.dat               # current colmv after loopfilter, 128 bits for oneline
+#inter_cur_colmv_enc128                 = inter_colmv_enc128_cur.dat           # current colmv after loopfilter and compress
+
+#inter_cur_colmv_debug                  = inter_colmv_cur_debug.txt            # for debug, current colmv after loopfilter    
+                                                                
+#inter_global                           = inter_reg.dat                        # globle parameters
+#inter_make_cmd                         = inter_make_cmd.dat                   # make cmd to inter module
+#inter_make_cmd_debug                   = inter_make_cmd_debug.txt             # for debug, inter make cmd
+                                      
+#inter_mvd_to_prefetch_cmd              = inter_mvd_to_prefetch_cmd.dat        # mvd to prefetch cmd
+#inter_mvd_to_prefetch_cmd_debug        = inter_mvd_to_prefetch_cmd_debug.txt  # for debug, mvd to prefetch cmd
+#inter_mvd_cmd_num                      = inter_mvd_cmd_num.dat                # mvd cmd num, must divided by 7
+#inter_mv_scale_in                      = inter_mv_scale_in.dat                # mvd scale in parameters
+#inter_mv_scale_out                     = inter_mv_scale_out.dat               # mvd scale out parameters
+#inter_mv_scale_debug                   = inter_mv_scale_debug.txt             # for debug, mvd scale parameter
+#                         
+#inter_prefetch_to_bus_cmd              = inter_prefetch_to_bus_cmd.dat        # prefetch bus cmd, for get data from ddr
+#inter_fbc_prefetch_to_bus_cmd          = inter_fbc_prefetch_to_bus_cmd.dat    # inter to prefetch fbc command
+#inter_fbc_blk_to_pu_cmd                = inter_fbc_pu_cmd.dat                 # prefetch fbc command to get pu data
+#inter_prefetch_to_bus_cmd_debug        = inter_prefetch_to_bus_cmd_debug.txt  # for debug, prefetch bus cmd
+
+#inter_mc_parmter                       = mc_param.dat                         # mc global data
+#inter_prefetch_to_mc_cmd               = mc_cmd_in.dat                        # inter to mc command
+#inter_prefetch_to_mc_cmd_debug         = mc_cmd_in_debug.txt                  # for debug
+#
+#inter_prefetch_to_mc_luma_data         = mc_data_in_luma.dat        
+#inter_prefetch_to_mc_luma_data_debug   = mc_data_in_luma_debug.txt            # for debug          
+#inter_prefetch_to_mc_chroma_data       = mc_data_in_chroma.dat     
+#inter_prefetch_to_mc_chroma_data_debug = mc_data_in_chroma_debug.txt          # for debug                     
+#inter_prefetch_to_mc_data              = mc_data_in.dat                       # prefetch to luma and chroma data
+#inter_prefetch_to_mc_data_debug        = mc_data_in_debug.txt                 # for debug, prefetch to luma and chroma data
+#          
+#inter_mc_cal_data_out                  = mc_cal_data_out.dat                       
+#inter_mc_to_recon_cmd                  = intra_recon_inter_pu_cmd.txt            
+#inter_mc_to_recon_cmd_debug            = mc_cmd_out_debug.txt                 # for debug           
+#inter_mc_wpout_data                    = mc_wp_data_out.dat                   # for mc output        
+#inter_mc_to_recon_data                 = intra_recon_inter_pu_data.txt        # for recon input
+#inter_mc_to_recon_data_debug           = mc_wp_data_out_debug.txt             # for debug, pu src and dst data
+#
+#inter_mv_count                         = inter_mv_sum.dat                     # mv info
+#inter_mv_count_debug                   = inter_mv_sum_debug.txt               # for debug, mv info
+#                
+#inter_module_debug                     = inter_module_debug.txt               # for debug, all inter module
+#                                                                         
+#inter_fbc_lpf_l                   = inter_fbc_lpfl.dat                   # for fbc debug
+#inter_fbc_lpf_c                   = inter_fbc_lpfc.dat                   # for fbc debug
+#inter_fbc_lpf_v                   = inter_fbc_lpfv.dat                   # for fbc debug
+#inter_fbc_head                    = inter_fbc_head.dat                   # for fbc debug
+#inter_fbc_body                    = inter_fbc_body.dat                   # for fbc debug
+#inter_col_compress                = inter_colmv_compress.dat             # for colmv enc debug
+#inter_col_orginal                 = inter_colmv_orginal.dat              # for colmv enc debug
+#inter_col_param                   = inter_colmv_param.dat                # for colmv enc debug
+scale_luma                         = scale_luma.dat                       # for scale down debug
+scale_chroma                       = scale_chroma.dat                     # for scale down debug
+##########################################################################################
+#INTRA_MODULE
+##=================================
+#intra_pic_inf                 = intra_recon_ctu_width.txt 
+#intra_ctu_avail               = intra_ctu_avail.dat
+#intra_ctu_ref                 = intra_ctu_ref.dat
+#intra_ctu_position            = intra_ctu_position.dat
+#intra_ctu_recon               = ctu_data_y.txt
+#intra_ctu_recon_uv            = ctu_data_uv.txt
+#
+#intra_cu_position_pic         = intra_cu_position_pic.dat
+#intra_cu_position_ctu         = intra_cu_position_ctu.dat
+#intra_cu_size                 = intra_cu_size.dat
+#intra_cu_avail                = intra_cu_avail.dat
+#intra_cu_ref                  = intra_cu_ref.dat
+#intra_cu_ref_map              = intra_cu_ref_map.dat
+#intra_cu_is_intra             = intra_cu_is_intra.dat
+#intra_cu_pu_devision          = intra_cu_pu_devision.dat
+#
+#intra_pu_position_pic         = intra_pu_position_pic.dat
+#intra_pu_position_ctu         = intra_pu_position_ctu.dat
+#intra_pu_position_cu          = intra_pu_position_cu.dat
+#intra_pu_predmode             = intra_pu_predmode.dat
+#intra_pu_pred_data            = intra_recon_intra_pred_data.txt
+#intra_pu_recon                = intra_recon_recon_data.txt
+#intra_pu_resi_ybank0          = intra_recon_intra_resi_ybank0.txt
+#intra_pu_resi_ybank1          = intra_recon_intra_resi_ybank1.txt
+#intra_pu_resi_ubank0          = intra_recon_intra_resi_ubank0.txt
+#intra_pu_resi_ubank1          = intra_recon_intra_resi_ubank1.txt
+#intra_pu_resi_vbank0          = intra_recon_intra_resi_vbank0.txt
+#intra_pu_resi_vbank1          = intra_recon_intra_resi_vbank1.txt
+#intra_pu_resi_y_flag          = intra_recon_resi_flag_y.txt
+#intra_pu_resi_u_flag          = intra_recon_resi_flag_u.txt
+#intra_pu_resi_v_flag          = intra_recon_resi_flag_v.txt
+#intra_pu_ref_buf              = intra_recon_ref_pixel_y.txt
+#intra_pu_ref_buf_u            = intra_recon_ref_pixel_u.txt
+#intra_pu_ref_buf_v            = intra_recon_ref_pixel_v.txt
+#intra_pu_ref_buf_avail        = intra_recon_position_flag_y.txt
+#intra_pu_ref_buf_u_avail      = intra_recon_position_flag_u.txt
+#intra_pu_ref_buf_v_avail      = intra_recon_position_flag_v.txt
+
+#intra_cu_pred_debug           = intra_recon_cu_pred_debug.txt # debug file
+#intra_cu_resi_debug           = intra_recon_cu_resi_debug.txt # debug file
+#intra_cu_rec_debug            = intra_recon_cu_rec_debug.txt  # debug file
+#
+##########################################################################################
+#REG_MODULE
+##=================================
+register_out                   = register.dat                 # register data per frame
+##########################################################################################
+#LOOPFILTER_MODULE
+##=================================
+#loopfilter_mvd_bs                         = avs2_mvd_bs_cmd.dat          # inter bs printf
+#loopfilter_iqit_bs                        = avs2_it_bs_cmd.dat
+#loopfilter_recon_luma_data                = avs2_ctu_buffer_luma.dat     
+#loopfilter_recon_chroma_data              = avs2_ctu_buffer_chroma.dat
+#loopfilter_dblk_to_sao_luma_data          = avs2_ctu_y_in_buff_sao.dat
+#loopfilter_dblk_to_sao_chroma_data        = avs2_ctu_uv_in_buff_sao.dat
+#loopfilter_sao_to_alf_luma_data           = avs2_ctu_y_in_buff_alf.dat
+#loopfilter_sao_to_alf_chroma_data         = avs2_ctu_uv_in_buff_alf.dat
+#loopfilter_alf_luma_data                  = avs2_ctu_y_out_buff_alf.dat
+#loopfilter_alf_chroma_data                = avs2_ctu_uv_out_buff_alf.dat
+#loopfilter_dblk_out_luma_data             = dblk_out_luma.dat
+#loopfilter_dblk_out_chroma_data           = dblk_out_chro.dat
+#loopfilter_sao_out_luma_data             = sao_out_luma.dat
+#loopfilter_sao_out_chroma_data           = sao_out_chro.dat
+#loopfilter_alf_out_luma_data             = alf_out_luma.dat
+#loopfilter_alf_out_chroma_data           = alf_out_chro.dat
+#loopfilter_alf_bus_luma_data              = filterd_out_norm_luma.dat
+#loopfilter_alf_bus_chroma_data            = filterd_out_norm_chro.dat
+#loopfilter_alf_para_data                  = avs2_alf_para.dat
+#loopfilter_alf_cmd_data                   = avs2_alf_cmd.dat
+#loopfilter_alf_pre_cal_luma_data          = avs2_alf_pre_cal_luma.dat
+#loopfilter_alf_pre_cal_u_data             = avs2_alf_pre_cal_u.dat
+#loopfilter_alf_pre_cal_v_data             = avs2_alf_pre_cal_v.dat
+#loopfilter_afbc_in_luma_data              = avs2_afbc_in_luma.dat
+#loopfilter_afbc_in_chroma_data            = avs2_afbc_in_chroma.dat
+#loopfilter_alf_ctu_coef_luma_data	   = avs2_ctu_coef_luma_alf.dat
+#loopfilter_sao_ctu_para_data              = avs2_sao_para.dat
+#filterd_in_y = filterd_in_y.dat
+#filterd_in_u = filterd_in_u.dat
+#filterd_in_v = filterd_in_v.dat
+
+##########################################################################################
+#HW_COMM_MODULE
+##=================================
+#hw_comm_stat_info              = frame_stat.dat                 # frame statistic info

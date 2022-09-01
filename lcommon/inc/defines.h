@@ -42,17 +42,21 @@
 #ifndef _DEFINES_H_
 #define _DEFINES_H_
 
-#define RD "17.0"
-#define VERSION "17.0"
+#define RD "19.5"
+#define VERSION "19.5"
 
 #define RESERVED_PROFILE_ID 0x24
 #define BASELINE_PICTURE_PROFILE 18
 #define BASELINE_PROFILE 32    // 0x20
 #define BASELINE10_PROFILE 34  // 0x22
-#define TRACE 0                //!< 0:Trace off 1:Trace on
+
+#define SCENE_PROFILE 48    // 0x21
+#define SCENE10_PROFILE 50  // 0x23
+#define TRACE 0             //!< 0:Trace off 1:Trace on
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 /* Type definitions and file operation for Windows/Linux
  * All file operations for windows are replaced with native (FILE *) operations
@@ -72,6 +76,71 @@
 #define int64 int64_t
 #endif
 
+//////////////////// bug fix /////////////////////////////
+#define ALFSliceFix 1
+#define WRITENBIT_FIX 1
+#define FIX_PROFILE_LEVEL_DPB_RPS_1 1
+#define FIX_PROFILE_LEVEL_DPB_RPS_2 1
+#define FIX_RPS_PICTURE_REMOVE 1  // flluo@pku.edu.cn
+#define Mv_Clip 1                 // yuquanhe@hisilicon.com
+#define REMOVE_UNUSED 1           // yuquanhe@hisilicon.com
+#define SAO_Height_Fix 1          // yuquanhe@hisilicon.com
+#define B_BACKGROUND_Fix 1        // yuquanhe@hisilicon.com
+#define Check_Bitstream 1         // yuquanhe@hisilicon.com
+#define Wq_param_Clip 1           // yuquanhe@hisilicon.com
+#define RD1501_FIX_BG \
+  1                // luofalei flluo@pku.edu.cn , wlq15@mails.tsinghua.edu.cn ,
+                   // Longfei.Wang@mediatek.com
+#define Mv_Rang 1  // yuquanhe@hisilicon.com ; he-yuan.lin@mstarsemi.com
+#define RD160_FIX_BG \
+  1  // Longfei.Wang@mediatek.com ;fred.chiu@mediatek.com
+     // jie1222.chen@samsung.com
+#define RD1601_FIX_BG \
+  1  // Y_K_Tu@novatek.com.tw,
+     // he-yuan.lin@mstarsemi.com,victor.huang@montage-tech.com M4041
+#define SEQ_CHANGE_CHECKER 1          // he-yuan.lin@mstarsemi.com
+#define M4140_END_OF_SLICE_CHECKER 1  // he-yuan.lin@mstarsemi.com
+#define Mv_check_bug 1                // wlq15@mails.tsinghua.edu.cn
+#define SAO_ASSERTION_FIX 1           // fred.chiu@mediatek.com
+#define FIELD_HORI_MV_NO_SCALE_FIX 1  // fred.chiu@mediatek.com
+#define RD170_FIX_BG 1
+#define FIX_CHROMA_FIELD_MV_BK_DIST 1
+#define FIX_LUMA_FIELD_MV_BK_DIST 1
+#define FIX_CHROMA_FIELD_MV_CLIP 1
+#define FIX_FLUSH_DPB_BY_LF 1          // fred.chiu@mediatek.com
+#define FIX_SEQ_END_FLUSH_DPB_BY_LF 1  // fred.chiu@mediatek.com
+#define RD191_FIX_BUG 1                // yuquanhe@hsilicon.com
+#define SYM_MV_SCALE_FIX 1             // peisong.chen@broadcom.com
+#define BUG_10BIT_REFINEQP 0           // wangzhenyu
+#define M4310_BUG_SNR 1
+#define M4346_FIX_RATECONTROL 1
+#define Mv_CHECK_BUG2 1  // wlq15@mails.tsinghua.edu.cn  M4302
+#define Mv_CHECK_BUG3 1  // wlq15@mails.tsinghua.edu.cn  M4302
+#define M4326_SYM_BUG_FIX 1
+#define M4289_GLOBALLAMBDA 1
+#define FIX_RPS_BUG 1
+#define WARNING_REMOVE \
+  1                   /// remove all the warnings. weizw18@mails.tsinghua.edu.cn
+#define MV_BUG_FIX 1  /// deal with mv out of range in decoder
+
+#if RD191_FIX_BUG
+#ifdef _MSC_VER
+typedef __int64 Int64;
+
+#if _MSC_VER <= 1200  // MS VC6
+typedef __int64
+    UInt64;  // MS VC6 does not support unsigned __int64 to double conversion
+#else
+typedef unsigned __int64 UInt64;
+#endif
+
+#else
+
+typedef long long Int64;
+typedef unsigned long long UInt64;
+
+#endif
+#endif
 /***************************************************************************************
  * AVS2 macros start
  ***************************************************************************************/
@@ -105,6 +174,8 @@ AVS2 10bit/12bit profile
 
 #define DBFIX_10bit 1
 
+#define BUG_10bit 1
+
 /*
 *************************************************************************************
 AVS2 HIGH LEVEL SYNTAX
@@ -112,9 +183,10 @@ AVS2 HIGH LEVEL SYNTAX
 */
 #define AVS2_HDR_HLS 1
 
-#define AVS2_HDR_Tec 0  // AVS2 HDR technology //yuquanhe@hisilicon.com
+#define AVS2_HDR_Tec 1  // AVS2 HDR technology //yuquanhe@hisilicon.com
 #if AVS2_HDR_Tec
-#define HDR_CHROMA_DELTA_QP 0  // M3905
+#define HDR_CHROMA_DELTA_QP 1  // M3905
+#define HDR_ADPTIVE_UV_DELTA 1
 #endif
 /*
 *************************************************************************************
@@ -153,7 +225,17 @@ AVS2 S2
 #define MAXREF 7  // maximum number of reference frame for each frame
 #define MAXGOP 32
 #endif
+#if RD170_FIX_BG
+#define REF_MAXBUFFER 32
+#else
 #define REF_MAXBUFFER 7
+#endif
+
+#define BACKIMG_HW_IDX (REF_MAXBUFFER + 1)
+
+#define BCBR \
+  1  // block-composed background reference,
+     // fangdong@mail.ustc.edu.cn
 
 ///////////////////Adaptive Loop Filter//////////////////////////
 #define NUM_ALF_COEFF_CTX 1
@@ -164,7 +246,8 @@ AVS2 S2
 
 //////////////////// entropy coding /////////////////////////////
 #define NUN_VALUE_BOUND \
-  254  // M3090: Make sure rs1 will not overflow for 8-bit unsign char
+  1  // modify 254 to 1 for match hw impl  // M3090: Make sure rs1 will not
+     // overflow for 8-bit unsign char
 #define Encoder_BYPASS_Final 1  // M3484
 #define Decoder_Bypass_Annex 0  // M3484
 #define Decoder_Final_Annex 0   // M3540
@@ -179,46 +262,24 @@ AVS2 S2
     (y) = (x) ^ (y); \
   }
 
-//////////////////// bug fix /////////////////////////////
-#define ALFSliceFix 1
-#define WRITENBIT_FIX 1
-#define FIX_PROFILE_LEVEL_DPB_RPS_1 1
-#define FIX_PROFILE_LEVEL_DPB_RPS_2 1
-#define FIX_RPS_PICTURE_REMOVE 1  // flluo@pku.edu.cn
-#define Mv_Clip 1                 // yuquanhe@hisilicon.com
-#define REMOVE_UNUSED 1           // yuquanhe@hisilicon.com
-#define SAO_Height_Fix 1          // yuquanhe@hisilicon.com
-#define B_BACKGROUND_Fix 1        // yuquanhe@hisilicon.com
-#define Check_Bitstream 1         // yuquanhe@hisilicon.com
-#define Wq_param_Clip 1           // yuquanhe@hisilicon.com
-#define RD1501_FIX_BG \
-  1                // luofalei flluo@pku.edu.cn , wlq15@mails.tsinghua.edu.cn ,
-                   // Longfei.Wang@mediatek.com
-#define Mv_Rang 1  // yuquanhe@hisilicon.com ; he-yuan.lin@mstarsemi.com
-#define RD160_FIX_BG \
-  1  // Longfei.Wang@mediatek.com ;fred.chiu@mediatek.com
-     // jie1222.chen@samsung.com
-#define RD1601_FIX_BG \
-  1  // Y_K_Tu@novatek.com.tw,
-     // he-yuan.lin@mstarsemi.com,victor.huang@montage-tech.com M4041
-#define SEQ_CHANGE_CHECKER 1          // he-yuan.lin@mstarsemi.com
-#define Mv_check_bug 1                // wlq15@mails.tsinghua.edu.cn
-#define SAO_ASSERTION_FIX 1           // fred.chiu@mediatek.com
-#define FIELD_HORI_MV_NO_SCALE_FIX 1  // fred.chiu@mediatek.com
 //////////////////// encoder optimization
 /////////////////////////////////////////////////
 #define TH 2
 
-#define M3624MDLOG  // reserved
+//#define M3624MDLOG                             // reserved
 
 #define TDRDO 1  // M3528
 //#define FIX_TDRDO_BG                        1  // flluo@pku.edu.cn, 20160318//
 #define RATECONTROL 1  // M3580 M3627 M3689
 #define AQPO 1         // M3623
-#define AQPOM3694 1
+#define AQPOM3694 0
+#define AQPOM4063 1
 #define AQPOM3762 1
+#define BGQPO 1  // M4061
+#if BGQPO
+#define LONGREFERENCE 32
+#endif
 
-//#define REPORT
 //////////////////// Quantization   ///////////////////////////////////////
 #define FREQUENCY_WEIGHTING_QUANTIZATION \
   1  // Adaptive frequency weighting quantization
@@ -448,7 +509,11 @@ AVS2 S2
 #define PicExtensionData 1
 
 #define REF_OUTPUT 1  // M3337
-
+#if M4289_GLOBALLAMBDA
+#if _MSC_VER <= 1600 && !defined(__GNUC__)  // MS VC6
+#define log2(x) log(x) / log(2)
+#endif
+#endif
 /* MV scaling 14 bit */
 #define MULTI 16384
 #define HALF_MULTI 8192

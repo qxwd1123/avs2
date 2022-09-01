@@ -39,6 +39,9 @@
 
 #include "inter-prediction.h"
 #include "block_info.h"
+#if FIX_LUMA_FIELD_MV_BK_DIST
+#include "../../ldecod/inc/global.h"
+#endif
 /////////////////////////////////////////////////////////////////////////////
 /// local function declaration
 /////////////////////////////////////////////////////////////////////////////
@@ -51,16 +54,16 @@ static int calculate_distance(int blkref, int fw_bw);
 /// function definition
 /////////////////////////////////////////////////////////////////////////////
 /*
-******************************************************************************
-*  Function: calculated field or frame distance between current field(frame)
-*            and the reference field(frame).
-*     Input:
-*    Output:
-*    Return:
-* Attention:
-*    Author: Yulj 2004.07.14
-******************************************************************************
-*/
+ ******************************************************************************
+ *  Function: calculated field or frame distance between current field(frame)
+ *            and the reference field(frame).
+ *     Input:
+ *    Output:
+ *    Return:
+ * Attention:
+ *    Author: Yulj 2004.07.14
+ ******************************************************************************
+ */
 int calculate_distance(int blkref, int fw_bw)  // fw_bw>=: forward prediction.
 {
   int distance = 1;
@@ -90,7 +93,7 @@ int calculate_distance(int blkref, int fw_bw)  // fw_bw>=: forward prediction.
       if (fw_bw >= 0) {  // forward
         distance = hc->picture_distance * 2 -
                    fref[0]->imgtr_fwRefDistance * 2;  // Tsinghua 200701
-      } else {
+      } else {                                        // backward
         distance = img->imgtr_next_P * 2 -
                    hc->picture_distance * 2;  // Tsinghua 200701
       }
@@ -105,14 +108,18 @@ int calculate_distance(int blkref, int fw_bw)  // fw_bw>=: forward prediction.
 /*Lou 1016 Start*/
 // The unit of time distance is calculated by field time
 /*
-*************************************************************************
-* Function:
-* Input:
-* Output:
-* Return:
-* Attention:
-*************************************************************************
-*/
+ *************************************************************************
+ * Function:
+ * Input:
+ * Output:
+ * Return:
+ * Attention:
+ *************************************************************************
+ */
+#if RD170_FIX_BG
+int scale_motion_vector(int motion_vector, int currblkref, int neighbourblkref,
+                        int ref, int delta2, int background_reference_enable)
+#else
 #if Mv_Clip
 int scale_motion_vector(
     int motion_vector, int currblkref, int neighbourblkref, int ref,
@@ -123,6 +130,7 @@ int scale_motion_vector(
     int motion_vector, int currblkref, int neighbourblkref,
     int ref)  // qyu 0820 modified , int currsmbtype, int neighboursmbtype, int
               // block_y_pos, int curr_block_y, int ref, int direct_mv)
+#endif
 #endif
 {
   int sign = (motion_vector > 0 ? 1 : -1);
@@ -143,7 +151,14 @@ int scale_motion_vector(
 
   mult_distance = calculate_distance(currblkref, ref);
   devide_distance = calculate_distance(neighbourblkref, ref);
-
+#if RD170_FIX_BG
+  if (background_reference_enable &&
+      (currblkref == img->num_of_references - 1 &&
+       neighbourblkref == img->num_of_references - 1)) {
+    mult_distance = 1;
+    devide_distance = 1;
+  }
+#endif
 #if Mv_Rang
   motion_vector = Clip3(-32768, 32767,
                         (sign * (((long long int)(motion_vector)*mult_distance *
@@ -179,7 +194,13 @@ void scalingMV(int *cur_mv_x, int *cur_mv_y, int curT, int ref_mv_x,
   *cur_mv_y = Clip3(-32768, 32767, (*cur_mv_y));
 #endif
 }
-
+#if SYM_MV_SCALE_FIX
+int scale_sym_mv(int mv, int dist_dst, int dist_src) {
+  mv = ((long long int)(mv)*dist_dst * (MULTI / dist_src) + HALF_MULTI) >>
+       OFFSET;
+  return mv;
+}
+#endif
 #if MV_SCALE
 int scale_mv(int mv, int dist_dst, int dist_src) {
 #if Mv_Rang
@@ -192,15 +213,41 @@ int scale_mv(int mv, int dist_dst, int dist_src) {
 #endif
   return mv;
 }
-
-int scale_mv_y1(int mvy, int dist_dst, int dist_src) {
-  int oriPOC = 2 * hc->picture_distance;
-  int oriRefPOC = oriPOC - dist_src;
-  int scaledPOC = 2 * hc->picture_distance;
-  int scaledRefPOC = scaledPOC - dist_dst;
-  int delta, delta2;
+#if FIX_LUMA_FIELD_MV_BK_DIST
+int scale_mv_y1(int mvy, int dist_dst, int dist_src, int fix_ref_idx1,
+                int fix_ref_idx2, int background_reference_enable)
+#else
+int scale_mv_y1(int mvy, int dist_dst, int dist_src)
+#endif
+{
+  int oriPOC = 2 * hc->picture_distance;  // DistanceIndexCol
+  int oriRefPOC =
+      oriPOC -
+      dist_src;  // DistanceIndexColRef = DistanceIndexCol - BlockDistanceColRef
+  int scaledPOC = 2 * hc->picture_distance;  // DistanceIndexCur
+  int scaledRefPOC = scaledPOC - dist_dst;   // DistanceIndexCol
+  int delta = 0, delta2 = 0;
 
   getDeltas(&delta, &delta2, oriPOC, oriRefPOC, scaledPOC, scaledRefPOC);
+#if FIX_LUMA_FIELD_MV_BK_DIST
+  if (img->is_field_sequence && background_reference_enable &&
+      fix_ref_idx1 == img->num_of_references - 1) {
+    if (img->is_top_field != bk_img_is_top_field) {
+      delta = img->is_top_field ? 2 : -2;
+    } else {
+      delta = 0;
+    }
+  }
+
+  if (img->is_field_sequence && background_reference_enable &&
+      fix_ref_idx2 == img->num_of_references - 1) {
+    if (img->is_top_field != bk_img_is_top_field) {
+      delta2 = img->is_top_field ? 2 : -2;
+    } else {
+      delta2 = 0;
+    }
+  }
+#endif
 #if RD1601_FIX_BG
   return (int)Clip3(
       -32768, 32767,
@@ -234,8 +281,14 @@ int scale_mv_y2(int mvy, int dist_dst, int dist_src) {
 #endif
 }
 
+#if RD170_FIX_BG
 int scale_motion_vector_y1(int mvy, int currblkref, int neighbourblkref,
-                           int ref) {
+                           int ref, int background_reference_enable)
+#else
+int scale_motion_vector_y1(int mvy, int currblkref, int neighbourblkref,
+                           int ref)
+#endif
+{
   int dist_dst = calculate_distance(currblkref, ref);
   int dist_src = calculate_distance(neighbourblkref, ref);
   int oriPOC = 2 * hc->picture_distance;
@@ -246,17 +299,27 @@ int scale_motion_vector_y1(int mvy, int currblkref, int neighbourblkref,
 
   getDeltas(&delta, &delta2, oriPOC, oriRefPOC, scaledPOC, scaledRefPOC);
 #if Mv_Clip
+#if RD170_FIX_BG
+  return (int)(scale_motion_vector(mvy + delta, currblkref, neighbourblkref,
+                                   ref, -delta2, background_reference_enable));
+#else
   return (int)(scale_motion_vector(mvy + delta, currblkref, neighbourblkref,
                                    ref, -delta2));
+#endif
 #else
   return (
       int)(scale_motion_vector(mvy + delta, currblkref, neighbourblkref, ref) -
            delta2);
 #endif
 }
-
+#if RD170_FIX_BG
 int scale_motion_vector_y2(int mvy, int currblkref, int neighbourblkref,
-                           int ref) {
+                           int ref, int background_reference_enable)
+#else
+int scale_motion_vector_y2(int mvy, int currblkref, int neighbourblkref,
+                           int ref)
+#endif
+{
   int dist_dst = calculate_distance(currblkref, ref);
   int dist_src = calculate_distance(neighbourblkref, ref);
   int oriPOC = 2 * hc->picture_distance;
@@ -267,8 +330,13 @@ int scale_motion_vector_y2(int mvy, int currblkref, int neighbourblkref,
 
   getDeltas(&delta, &delta2, oriPOC, oriRefPOC, scaledPOC, scaledRefPOC);
 #if Mv_Clip
+#if RD170_FIX_BG
+  return (int)(scale_motion_vector(mvy + delta, currblkref, neighbourblkref,
+                                   ref, delta2, background_reference_enable));
+#else
   return (int)(scale_motion_vector(mvy + delta, currblkref, neighbourblkref,
                                    ref, delta2));
+#endif
 #else
   return (
       int)(scale_motion_vector(mvy + delta, currblkref, neighbourblkref, ref) +
@@ -299,6 +367,8 @@ void scale_mv_direct_x(int mv_x, int dist2, int dist4, int dist5, int *Fwmv_x,
 
 void scale_mv_direct_y(int mv_y, int dist1, int dist2, int dist3, int dist4,
                        int dist5, int *Fwmv_y, int *Bwmv_y) {
+  int delta = 0, delta2 = 0, delta_d = 0, delta2_d = 0;
+
   if (mv_y < 0) {
     *Fwmv_y = -scale_mv_direct(mv_y, dist2, -dist4);
     *Bwmv_y = scale_mv_direct(mv_y, dist2, -dist5);
@@ -308,14 +378,14 @@ void scale_mv_direct_y(int mv_y, int dist1, int dist2, int dist3, int dist4,
   }
 #if HALF_PIXEL_COMPENSATION_DIRECT
   if (img->is_field_sequence) {
-    int delta, delta2, delta_d, delta2_d;
-    int oriPOC = dist1;
-    int oriRefPOC = dist1 - dist2;
-    int scaledPOC = dist3;
-    int scaledRefPOC = dist3 - dist4;
+    // frame_no_next_P, iTRp, frame_no_B, iTRb, iTRd
+    int oriPOC = dist1;                // DistanceIndexCol/DistanceIndexBw, picB
+    int oriRefPOC = dist1 - dist2;     // DistanceIndexRef
+    int scaledPOC = dist3;             // DistanceIndexCur
+    int scaledRefPOC = dist3 - dist4;  // DistanceIndexFw, picF
     getDeltas(&delta, &delta2, oriPOC, oriRefPOC, scaledPOC, scaledRefPOC);
 
-    scaledRefPOC = dist3 - dist5;
+    scaledRefPOC = dist3 - dist5;  // distanceIndexBw
     getDeltas(&delta_d, &delta2_d, oriPOC, oriRefPOC, scaledPOC, scaledRefPOC);
     assert(delta_d == delta);
 
@@ -344,9 +414,18 @@ int derive_dv(int neigh_mv) { return neigh_mv; }
  ******************************************************************************
  */
 void get_reference_list_info(char *str) {
+  const char *typ;
   char str_tmp[16];
   int i;
-  int poc = hc->f_rec->imgtr_fwRefDistance;
+
+  if (img->typeb == BACKGROUND_IMG) {
+    typ = (hd->background_picture_output_flag != 0) ? "G" : "GB";
+  } else {
+    typ = (img->type == INTRA_IMG)   ? "I"
+          : (img->type == INTER_IMG) ? ((img->typeb == BP_IMG) ? "S" : "P")
+                                     : (img->type == F_IMG ? "F" : "B");
+  }
+  // int poc = hc->f_rec->imgtr_fwRefDistance;  //fred.chiu@mediatek.com
 
   if (img->num_of_references > 0) {
     strcpy(str, "[");

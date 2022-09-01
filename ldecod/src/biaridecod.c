@@ -115,7 +115,7 @@ void arideco_start_decoding(DecodingEnvironmentPtr dep, unsigned char *cpixcode,
   {
     int i;
     Dbits_to_go = 0;
-
+    int s_pos = ((*Dcodestrm_len - 1) * 8 + (8 - Dbits_to_go));
     for (i = 0; i < B_BITS - 1; i++) {
       if (--Dbits_to_go < 0) {
         get_byte();
@@ -181,6 +181,7 @@ unsigned int biari_decode_symbol(DecodingEnvironmentPtr dep,
   register unsigned int t_rlps;
   register unsigned int t2;
   register unsigned char s2;
+  register unsigned int bit_val_t;
 
   bit = bi_ct->MPS;
 
@@ -244,7 +245,8 @@ unsigned int biari_decode_symbol(DecodingEnvironmentPtr dep,
       }
 
       // Shift in next bit and add to value
-      value_t = (value_t << 1) | ((Dbuffer >> Dbits_to_go) & 0x01);
+      bit_val_t = ((Dbuffer >> Dbits_to_go) & 0x01);
+      value_t = (value_t << 1) | bit_val_t;
       value_t = 256 + value_t - t2;
     }
 
@@ -257,7 +259,8 @@ unsigned int biari_decode_symbol(DecodingEnvironmentPtr dep,
       }
 
       // Shift in next bit and add to value
-      value_t = (value_t << 1) | ((Dbuffer >> Dbits_to_go) & 0x01);
+      bit_val_t = ((Dbuffer >> Dbits_to_go) & 0x01);
+      value_t = (value_t << 1) | bit_val_t;
     }
 
     s1 = 0;
@@ -514,6 +517,7 @@ unsigned int biari_decode_symbol_eq_prob(DecodingEnvironmentPtr dep) {
 #else
   ctx->LG_PMPS = (QUARTER << LG_PMPS_SHIFTNO);
   ctx->MPS = 0;
+  ctx->cycno = 0;
   cFlag = 0;
   bit = biari_decode_symbol(dep, ctx);
 #endif
@@ -604,6 +608,7 @@ unsigned int biari_decode_final(DecodingEnvironmentPtr dep) {
 #else
   ctx->LG_PMPS = 1 << LG_PMPS_SHIFTNO;
   ctx->MPS = 0;
+  ctx->cycno = 0;
   cFlag = 0;
   bit = biari_decode_symbol(dep, ctx);
 #endif

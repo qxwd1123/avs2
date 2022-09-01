@@ -35,7 +35,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
-//#include "global.h"
+#include "../../ldecod/inc/global.h"
 #include "../../lcommon/inc/commonVariables.h"
 #include "../../lcommon/inc/commonStructures.h"
 #include "../../lcommon/inc/loop-filter.h"

@@ -48,6 +48,10 @@
 #include "../../lcommon/inc/commonStructures.h"
 #include "../../lcommon/inc/commonVariables.h"
 
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+extern char bk_img_is_top_field;
+#endif
+
 void write_GB_frame(FILE *p_dec);
 
 #if !FIX_MAX_REF
@@ -105,6 +109,9 @@ typedef struct {
   int background_picture_enable;
 
   int background_number;
+#if BCBR
+  int bcbr_enable;
+#endif
 
   int demulate_enable;
   int currentbitoffset;
@@ -250,6 +257,7 @@ typedef struct {
   ref_man curr_RPS;
   int last_output;
   int trtmp;
+  int b_poc;
 #if M3480_TEMPORAL_SCALABLE
   int cur_layer;
 #endif
@@ -317,6 +325,7 @@ typedef struct {
   FILE *p_ref;  //<! pointer to input original reference YUV file file
   FILE *p_ref_background;
   FILE *p_out_background;
+  int extend_poc;
 
 #if MB_DQP
   int lastQP;
@@ -449,12 +458,15 @@ struct inp_par {
 extern struct inp_par *input;
 
 typedef struct {
+#if RD170_FIX_BG
+  STDOUT_DATA stdoutdata[REF_MAXBUFFER];
+#else
   STDOUT_DATA stdoutdata[8];
+#endif
   int buffer_num;
 } outdata;
 outdata outprint;
 
-FILE *p_sreport;  // rm52k
 void read_ipred_block_modes(int b8, unsigned int uiPositionInPic);
 // prototypes
 void init_conf(int numpar, char **config_str);  // 20071224, command line

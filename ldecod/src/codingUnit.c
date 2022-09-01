@@ -328,13 +328,25 @@ void SetMotionVectorPredictor(unsigned int uiBitSize,
     {
 #if MV_SCALE
       if (img->is_field_sequence && hv == 1 && rFrameL != -1) {
+#if RD170_FIX_BG
+        mva[hv] = scale_motion_vector_y1(mva[hv], ref_frame, rFrameL, ref,
+                                         hd->background_reference_enable);
+#else
         mva[hv] = scale_motion_vector_y1(mva[hv], ref_frame, rFrameL, ref);
+#endif
       } else {
 #if Mv_Clip
+#if RD170_FIX_BG
+        mva[hv] = scale_motion_vector(mva[hv], ref_frame, rFrameL, ref, 0,
+                                      hd->background_reference_enable);
+        //, smbtypecurr, smbtypeL, pic_block_y-off_y, pic_block_y,
+        // ref, direct_mv);
+#else
         mva[hv] = scale_motion_vector(
             mva[hv], ref_frame, rFrameL, ref,
             0);  //, smbtypecurr, smbtypeL, pic_block_y-off_y, pic_block_y, ref,
                  // direct_mv);
+#endif
 #else
         mva[hv] = scale_motion_vector(
             mva[hv], ref_frame, rFrameL,
@@ -405,13 +417,23 @@ void SetMotionVectorPredictor(unsigned int uiBitSize,
     {
 #if MV_SCALE
       if (img->is_field_sequence && hv == 1 && rFrameU != -1) {
+#if RD170_FIX_BG
+        mvb[hv] = scale_motion_vector_y1(mvb[hv], ref_frame, rFrameU, ref,
+                                         hd->background_reference_enable);
+#else
         mvb[hv] = scale_motion_vector_y1(mvb[hv], ref_frame, rFrameU, ref);
+#endif
       } else {
 #if Mv_Clip
+#if RD170_FIX_BG
+        mvb[hv] = scale_motion_vector(mvb[hv], ref_frame, rFrameU, ref, 0,
+                                      hd->background_reference_enable);
+#else
         mvb[hv] = scale_motion_vector(
             mvb[hv], ref_frame, rFrameU, ref,
             0);  //, smbtypecurr, smbtypeU, pic_block_y-y_up, pic_block_y, ref,
                  // direct_mv);
+#endif
 #else
         mvb[hv] = scale_motion_vector(
             mvb[hv], ref_frame, rFrameU,
@@ -483,13 +505,23 @@ void SetMotionVectorPredictor(unsigned int uiBitSize,
     {
 #if MV_SCALE
       if (img->is_field_sequence && hv == 1 && rFrameUL != -1) {
+#if RD170_FIX_BG
+        mv_d = scale_motion_vector_y1(mv_d, ref_frame, rFrameUL, ref,
+                                      hd->background_reference_enable);
+#else
         mv_d = scale_motion_vector_y1(mv_d, ref_frame, rFrameUL, ref);
+#endif
       } else {
 #if Mv_Clip
+#if RD170_FIX_BG
+        mv_d = scale_motion_vector(mv_d, ref_frame, rFrameUL, ref, 0,
+                                   hd->background_reference_enable);
+#else
         mv_d = scale_motion_vector(
             mv_d, ref_frame, rFrameUL, ref,
             0);  //, smbtypecurr, smbtypeUL, pic_block_y-y_upleft, pic_block_y,
                  // ref, direct_mv);
+#endif
 #else
         mv_d = scale_motion_vector(
             mv_d, ref_frame, rFrameUL,
@@ -560,10 +592,20 @@ void SetMotionVectorPredictor(unsigned int uiBitSize,
     {
 #if MV_SCALE
       if (img->is_field_sequence && hv == 1 && rFrameUR != -1) {
+#if RD170_FIX_BG
+        mvc_temp = scale_motion_vector_y1(mvc[hv], ref_frame, rFrameUR, ref,
+                                          hd->background_reference_enable);
+#else
         mvc_temp = scale_motion_vector_y1(mvc[hv], ref_frame, rFrameUR, ref);
+#endif
       } else {
 #if Mv_Clip
+#if RD170_FIX_BG
+        mvc_temp = scale_motion_vector(mvc[hv], ref_frame, rFrameUR, ref, 0,
+                                       hd->background_reference_enable);
+#else
         mvc_temp = scale_motion_vector(mvc[hv], ref_frame, rFrameUR, ref, 0);
+#endif
 #else
         mvc_temp = scale_motion_vector(mvc[hv], ref_frame, rFrameUR, ref);
 #endif
@@ -1294,7 +1336,9 @@ void Init_SubMB(unsigned int uiBitSize, unsigned int uiPositionInPic) {
   // Reset syntax element entries in MB struct
   currMB->ui_MbBitSize = uiBitSize;
   currMB->qp = img->qp;
-
+#if RD170_FIX_BG
+  currMB->trans_size = 0;
+#endif
 #if MB_DQP
   currMB->previouse_qp = img->qp;
   currMB->left_cu_qp = img->qp;
@@ -1389,9 +1433,26 @@ void PskipMV_COL(codingUnit *currMB, unsigned int uiPositionInPic,
     for (j = 0; j < 2; j++) {
       int block_x = pic_block8_x + blockshape_block_x / 2 * i;
       int block_y = pic_block8_y + blockshape_block_y / 2 * j;
-      refframe = col_ref[block_y][block_x];
 
+#if RD170_FIX_BG /* this is fix bug, follow code has error!!! */
+      if (img->typeb == BP_IMG) {  // S frame
+        refframe = 0;
+      } else if (hd->curr_RPS.num_of_ref == 1 &&
+                 hd->background_reference_enable) {  // F/P/B frame refer G/GB
+                                                     // frame
+        refframe = -1;
+      } else {
+        refframe = col_ref[block_y][block_x];
+      }
+
+#else
+      refframe = col_ref[block_y][block_x];
+#endif
+#if RD170_FIX_BG
+      if (refframe >= 0 && img->typeb != BP_IMG) {
+#else
       if (refframe >= 0) {
+#endif
         curT =
             (2 * (hc->picture_distance - fref[0]->imgtr_fwRefDistance) + 512) %
             512;
@@ -1405,8 +1466,15 @@ void PskipMV_COL(codingUnit *currMB, unsigned int uiPositionInPic,
         }
         if (refframe == hd->curr_RPS.num_of_ref - 1 &&
             hd->background_reference_enable) {
+          // assert(0);
+        }
+#if RD170_FIX_BG
+#else
+        if (refframe == hd->curr_RPS.num_of_ref - 1 &&
+            hd->background_reference_enable) {
           colT = 1;
         }
+#endif
 #if HALF_PIXEL_PSKIP
         if (img->is_field_sequence) {
           int oriPOC, oriRefPOC, scaledPOC, scaledRefPOC;
@@ -2250,7 +2318,8 @@ void read_MBHeader(codingUnit *currMB, unsigned int uiPositionInPic, int size,
   }
 
   if (img->type == B_IMG &&
-      (currMB->cuType >= P2NX2N && currMB->cuType <= PVER_RIGHT)) {
+      (currMB->cuType >= P2NX2N &&
+       currMB->cuType <= PVER_RIGHT)) {  // B frame for direction
     dP = &(currSlice->partArr[0]);
     currSE.reading = readPdir;
     dP->readSyntaxElement(
@@ -2566,6 +2635,10 @@ void fill_B_Skip_block(codingUnit *currMB, unsigned int uiPositionInPic,
                        int num_of_orgMB_in_row, int num_of_orgMB_in_col,
                        int N8_SizeScale) {
   int i, j;
+#if RD191_FIX_BUG
+  int i8_1st = 0;
+  int j8_1st = 0;
+#endif
 
   for (i = 0; i < num_of_orgMB_in_row; i++) {
     int pos = uiPositionInPic + i * img->PicWidthInMbs;
@@ -2586,9 +2659,11 @@ void fill_B_Skip_block(codingUnit *currMB, unsigned int uiPositionInPic,
       int r, c, hv;
 
       // store 2D index of block 0
+#if RD191_FIX_BUG
+#else
       int i8_1st;
       int j8_1st;
-
+#endif
       if (i == 0) {
         i8_1st = i8;
         j8_1st = j8;
@@ -2683,7 +2758,13 @@ void fill_B_Skip_block(codingUnit *currMB, unsigned int uiPositionInPic,
                               &img->fw_mv[j8][i8][0], &img->bw_mv[j8][i8][0]);
             scale_mv_direct_y(fref[0]->mvbuf[j8][i8][1], frame_no_next_P, iTRp,
                               frame_no_B, iTRb, iTRd, &img->fw_mv[j8][i8][1],
-                              &img->bw_mv[j8][i8][1]);
+                              &img->bw_mv[j8][i8][1]);  // delta calc inner
+
+            img->fw_mv[j8][i8][0] = Clip3(-32768, 32767, img->fw_mv[j8][i8][0]);
+            img->bw_mv[j8][i8][0] = Clip3(-32768, 32767, img->bw_mv[j8][i8][0]);
+            img->fw_mv[j8][i8][1] = Clip3(-32768, 32767, img->fw_mv[j8][i8][1]);
+            img->bw_mv[j8][i8][1] = Clip3(-32768, 32767, img->bw_mv[j8][i8][1]);
+
 #else
             if (fref[0]->mvbuf[j8][i8][0] < 0) {
               img->fw_mv[j8][i8][0] =
@@ -2902,7 +2983,8 @@ void fill_P_Skip_for_MH(codingUnit *currMB, unsigned int uiPositionInPic,
 
       for (i = 0; i < 2 * num_of_orgMB_in_row; i++) {
         for (j = 0; j < 2 * num_of_orgMB_in_col; j++) {
-          if (currMB->weighted_skipmode != 0) {
+          if (currMB->weighted_skipmode !=
+              0) {  // when F_Skip/F_Direct, has weight_skipmode
 #if FIX_MAX_REF
             get_p_reference_distances(delta);
 #else
@@ -2951,9 +3033,16 @@ void fill_P_Skip_for_MH(codingUnit *currMB, unsigned int uiPositionInPic,
 #if HALF_PIXEL_COMPENSATION_M1
             assert(hd->is_field_sequence == img->is_field_sequence);
             if (img->is_field_sequence) {
+#if FIX_LUMA_FIELD_MV_BK_DIST
+              img->p_snd_tmp_mv[block8_y + j][block8_x + i][1] = scale_mv_y1(
+                  img->tmp_mv[block8_y + j][block8_x + i][1],
+                  delta[currMB->weighted_skipmode], delta[0], 0,
+                  currMB->weighted_skipmode, hd->background_reference_enable);
+#else
               img->p_snd_tmp_mv[block8_y + j][block8_x + i][1] =
                   scale_mv_y1(img->tmp_mv[block8_y + j][block8_x + i][1],
                               delta[currMB->weighted_skipmode], delta[0]);
+#endif
             }
 #endif
 #else
@@ -3070,7 +3159,8 @@ void fill_blockMV(codingUnit *currMB, unsigned int uiPositionInPic,
 #endif
 
   if (((img->type == F_IMG) || (img->type == P_IMG)) &&
-      currMB->b8pdir[0] == FORWARD && currMB->b8mode[0] == 0) {
+      currMB->b8pdir[0] == FORWARD &&
+      currMB->b8mode[0] == 0) {  // skipdirect mode
     {
       if (currMB->md_directskip_mode == 0) {
         PskipMV_COL(currMB, uiPositionInPic, num_of_orgMB_in_row,
@@ -3128,9 +3218,16 @@ void fill_blockMV(codingUnit *currMB, unsigned int uiPositionInPic,
 #if HALF_PIXEL_COMPENSATION_M1
               assert(hd->is_field_sequence == img->is_field_sequence);
               if (img->is_field_sequence) {
+#if FIX_LUMA_FIELD_MV_BK_DIST
+                img->p_snd_tmp_mv[block8_y + j][block8_x + i][1] = scale_mv_y1(
+                    img->tmp_mv[block8_y + j][block8_x + i][1],
+                    delta[currMB->weighted_skipmode], delta[0], 0,
+                    currMB->weighted_skipmode, hd->background_reference_enable);
+#else
                 img->p_snd_tmp_mv[block8_y + j][block8_x + i][1] =
                     scale_mv_y1(img->tmp_mv[block8_y + j][block8_x + i][1],
                                 delta[currMB->weighted_skipmode], delta[0]);
+#endif
               }
 #endif
 #else
@@ -3232,17 +3329,24 @@ void fill_blockMV(codingUnit *currMB, unsigned int uiPositionInPic,
   }
 
   if (img->type == B_IMG) {
+#if RD191_FIX_BUG
+    int i8_1st;
+    int j8_1st;
+#endif
     for (i = 0; i < 4; i++) {
-      if ((currMB->b8mode[i] != IBLOCK) && (currMB->b8mode[i] == 0)) {
+      if ((currMB->b8mode[i] != IBLOCK) &&
+          (currMB->b8mode[i] == 0)) {  // skipdirect mode
         int i8 = ((uiPositionInPic % img->PicWidthInMbs) << 1) +
                  (i % 2) * N8_SizeScale;
         int j8 = ((uiPositionInPic / img->PicWidthInMbs) << 1) +
                  (i / 2) * N8_SizeScale;
         int r, c, hv;
 
+#if RD191_FIX_BUG
+#else
         int i8_1st;
         int j8_1st;
-
+#endif
         if (i == 0) {
           i8_1st = i8;
           j8_1st = j8;
@@ -3337,6 +3441,16 @@ void fill_blockMV(codingUnit *currMB, unsigned int uiPositionInPic,
               scale_mv_direct_y(fref[0]->mvbuf[j8][i8][1], frame_no_next_P,
                                 iTRp, frame_no_B, iTRb, iTRd,
                                 &img->fw_mv[j8][i8][1], &img->bw_mv[j8][i8][1]);
+
+              img->fw_mv[j8][i8][0] =
+                  Clip3(-32768, 32767, img->fw_mv[j8][i8][0]);
+              img->bw_mv[j8][i8][0] =
+                  Clip3(-32768, 32767, img->bw_mv[j8][i8][0]);
+              img->fw_mv[j8][i8][1] =
+                  Clip3(-32768, 32767, img->fw_mv[j8][i8][1]);
+              img->bw_mv[j8][i8][1] =
+                  Clip3(-32768, 32767, img->bw_mv[j8][i8][1]);
+
 #else
               if (fref[0]->mvbuf[j8][i8][0] < 0) {
                 img->fw_mv[j8][i8][0] =
@@ -3558,7 +3672,7 @@ int read_SubMB(unsigned int uiBitSize, unsigned int uiPositionInPic) {
   //  currMB->cuType_2= 0;
   read_MBHeader(currMB, uiPositionInPic, size, num_of_orgMB_in_row,
                 num_of_orgMB_in_col, &pdir, &real_cuType);
-
+  currMB->real_cuType = real_cuType;
   // qyu 0822 delete skip_mode_flag
 
 #if MB_DQP
@@ -3611,14 +3725,16 @@ int read_SubMB(unsigned int uiBitSize, unsigned int uiPositionInPic) {
   readReferenceIndex(currMB->ui_MbBitSize, uiPositionInPic);
   readMotionVector(currMB->ui_MbBitSize, uiPositionInPic);
 
-  if (((img->type == F_IMG) || (img->type == P_IMG)) && real_cuType < 0) {
+  if (((img->type == F_IMG) || (img->type == P_IMG)) &&
+      real_cuType < 0) {  // F_SKIP P_SKIP, has no residual
     fill_P_Skip_for_MH(currMB, uiPositionInPic, num_of_orgMB_in_row,
                        num_of_orgMB_in_col);
     return DECODE_MB;
   }
 
   fill_blockMV(currMB, uiPositionInPic, num_of_orgMB_in_row,
-               num_of_orgMB_in_col, N8_SizeScale);
+               num_of_orgMB_in_col,
+               N8_SizeScale);  // P_Direct F_Direct B_Direct2N
 
   // read CBP if not new intra mode
   read_CBP(currMB, uiPositionInPic, num_of_orgMB_in_row, num_of_orgMB_in_col);
@@ -3646,6 +3762,20 @@ int decode_SMB(unsigned int uiBitSize, unsigned int uiPositionInPic) {
   int pos_x, pos_y, pos_InPic;
 
   int tmp_pos;
+
+#if BCBR
+  int iFrameWidthInCU = (img->width + MAX_CU_SIZE - 1) / MAX_CU_SIZE;
+  int iLCUIdx =
+      (img->pix_y / MAX_CU_SIZE) * iFrameWidthInCU + (img->pix_x / MAX_CU_SIZE);
+  int iLCUBgFlag;
+  if (hd->bcbr_enable && img->type != INTRA_IMG &&
+      uiBitSize == MAX_CU_SIZE_IN_BIT) {
+    iLCUBgFlag = readBgFlag();
+    if (iLCUBgFlag) {
+      img->BLCUidx[iLCUIdx] = img->tr + hc->total_frames * 256;
+    }
+  }
+#endif
 
   if (uiBitSize == MIN_CU_SIZE_IN_BIT) {  // Liwr 0915
     split_flag = 0;
@@ -4634,8 +4764,13 @@ void readMotionVector(unsigned int uiBitSize, unsigned int uiPositionInPic) {
 
             DistanceIndexBw = (iTRp - DistanceIndexFw + 512) % 512;
 #if MV_SCALE
+#if SYM_MV_SCALE_FIX
+            curr_mvd = -scale_sym_mv(img->fw_mv[j8][i8][k], DistanceIndexBw,
+                                     DistanceIndexFw);
+#else
             curr_mvd = -scale_mv(img->fw_mv[j8][i8][k], DistanceIndexBw,
                                  DistanceIndexFw);
+#endif
 #if HALF_PIXEL_COMPENSATION_MVD
             if (img->is_field_sequence && k == 1) {
               curr_mvd = -scale_mv_y2(img->fw_mv[j8][i8][k], DistanceIndexBw,
@@ -4668,7 +4803,9 @@ void readMotionVector(unsigned int uiBitSize, unsigned int uiPositionInPic) {
             pmvr_mv[k] = Clip3(-32768, 32767, pmvr_mv[k]);
             pmvr_mvd[k] = curr_mvd - pmv[k];
             pmvr_mvd[k] = Clip3(-32768, 32767, pmvr_mvd[k]);
-          } else if (currMB->b8pdir[2 * j0 + i0] == DUAL) {
+
+          } else if (currMB->b8pdir[2 * j0 + i0] ==
+                     DUAL) {  // F frame dual forward
             int DistanceIndexFw, DistanceIndexBw;
             fw_refframe = hc->refFrArr[j8][i8];
 
@@ -4692,8 +4829,14 @@ void readMotionVector(unsigned int uiBitSize, unsigned int uiPositionInPic) {
                                 DistanceIndexFw);
 #if HALF_PIXEL_COMPENSATION_MVD
             if (img->is_field_sequence && k == 1) {
+#if FIX_LUMA_FIELD_MV_BK_DIST  // DUAL mv y
+              curr_mvd = scale_mv_y1(img->tmp_mv[j8][i8][k], DistanceIndexBw,
+                                     DistanceIndexFw, fw_refframe, refframe,
+                                     hd->background_reference_enable);
+#else
               curr_mvd = scale_mv_y1(img->tmp_mv[j8][i8][k], DistanceIndexBw,
                                      DistanceIndexFw);
+#endif
             }
 #endif
 #else
@@ -5558,9 +5701,15 @@ void decode_one_InterLumaBlock(int block8Nx8N) {
 #if HALF_PIXEL_COMPENSATION_M1
       assert(hd->is_field_sequence == img->is_field_sequence);
       if (img->is_field_sequence) {
+#if FIX_LUMA_FIELD_MV_BK_DIST
+        vec_wgt_y = (img->pix_y + joff) * mv_mul +
+                    scale_mv(mv_array[j8][i8][1],
+                             delta[currMB->weighted_skipmode], delta[0]);
+#else
         vec_wgt_y = (img->pix_y + joff) * mv_mul +
                     scale_mv_y1(mv_array[j8][i8][1],
                                 delta[currMB->weighted_skipmode], delta[0]);
+#endif
       }
 #endif
 #else
@@ -5620,10 +5769,11 @@ void decode_one_InterLumaBlock(int block8Nx8N) {
 
       {
         get_block(refframe, vec1_x, vec1_y, step_h, step_v, tmp_block,
-                  hd->integerRefY[refframe], ioff, joff
-
-        );  // need fix
-      } else {
+                  hd->integerRefY[refframe], ioff, joff);  // need fix
+      } else {  // dmh_mode && hd->b_dmh_enabled && img->type==F_IMG &&
+                // img->typeb != BP_IMG
+        int vec0_dmh_mvx, vec0_dmh_mvy;
+        int vec1_dmh_mvx, vec1_dmh_mvy;
         first_x = dmh_pos[dmh_mode][0][0];
         first_y = dmh_pos[dmh_mode][0][1];
         second_x = dmh_pos[dmh_mode][1][0];
@@ -5645,22 +5795,18 @@ void decode_one_InterLumaBlock(int block8Nx8N) {
         mv1_y = Clip3(-32768, 32767, vec1_y + second_y);
 #endif
         get_block(refframe, mv0_x, mv0_y, step_h, step_v, tmp_block,
-                  hd->integerRefY[refframe], ioff, joff
-
-        );  // need fix
+                  hd->integerRefY[refframe], ioff, joff);  // need fix
         get_block(refframe, mv1_x, mv1_y, step_h, step_v, tmp_blockbw,
-                  hd->integerRefY[refframe], ioff, joff
-
-        );  // need fix // re-use of tmp_blockbw for memory saving
+                  hd->integerRefY[refframe], ioff,
+                  joff);  // need fix // re-use of tmp_blockbw for
+                          // memory saving
 #else
         get_block(refframe, vec1_x + first_x, vec1_y + first_y, step_h, step_v,
-                  tmp_block, hd->integerRefY[refframe], ioff, joff
-
-        );  // need fix
+                  tmp_block, hd->integerRefY[refframe], ioff,
+                  joff);  // need fix
         get_block(refframe, vec1_x + second_x, vec1_y + second_y, step_h,
-                  step_v, tmp_blockbw, hd->integerRefY[refframe], ioff, joff
-
-        );  // need fix // re-use of tmp_blockbw for memory saving
+                  step_v, tmp_blockbw, hd->integerRefY[refframe], ioff,
+                  joff);  // need fix // re-use of tmp_blockbw for memory saving
 #endif
         for (i = 0; i < MAX_CU_SIZE; i++) {
           for (j = 0; j < MAX_CU_SIZE; j++) {
@@ -5779,13 +5925,9 @@ void decode_one_InterLumaBlock(int block8Nx8N) {
     // !! symirection prediction shenyanfei
 
     get_block(fw_refframe, vec1_x, vec1_y, step_h, step_v, tmp_block,
-              hd->integerRefY_fref[fw_refframe], ioff, joff
-
-    );
+              hd->integerRefY_fref[fw_refframe], ioff, joff);
     get_block(bw_refframe, vec2_x, vec2_y, step_h, step_v, tmp_blockbw,
-              hd->integerRefY_bref[bw_refframe], ioff, joff
-
-    );
+              hd->integerRefY_bref[bw_refframe], ioff, joff);
     for (ii = 0; ii < step_h; ii++) {
       for (jj = 0; jj < step_v; jj++) {
         img->predBlock[jj + joff][ii + ioff] =
@@ -5973,7 +6115,8 @@ int get_chroma_subpix_blk(int **dst, int xoffs, int yoffs, int width,
         tmpbuf[i + 1][j] =
             refpic[y0][x0] * COEF[posx][0] + refpic[y1][x1] * COEF[posx][1] +
             refpic[y2][x2] * COEF[posx][2] + refpic[y3][x3] * COEF[posx][3];
-        tmpbuf[i + 1][j] = (tmpbuf[i + 1][j] + add1) >> shift1;
+        tmpbuf[i + 1][j] =
+            (tmpbuf[i + 1][j] + add1) >> shift1;  // shift1 = bit_depth - 8
       }
     }
 
@@ -5983,8 +6126,8 @@ int get_chroma_subpix_blk(int **dst, int xoffs, int yoffs, int width,
               tmpbuf[i + 2][j] * COEF[posy][2] +
               tmpbuf[i + 3][j] * COEF[posy][3];
 
-        dst[yoffs + i][xoffs + j] =
-            IClip(0, max_pel_value, (val + add2) >> shift2);
+        dst[yoffs + i][xoffs + j] = IClip(
+            0, max_pel_value, (val + add2) >> shift2);  // shift2=20 - bit_depth
       }
     }
   }
@@ -6123,6 +6266,16 @@ void decode_one_InterChromaBlock(int uv) {
           int fw_bw = bframe && pred_dir ? -1 : 0;
           int distance = calculate_distance(refframe, fw_bw);
           delta = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+          if (hd->background_reference_enable &&
+              refframe == img->num_of_references - 1) {
+            if (img->is_top_field != bk_img_is_top_field) {
+              delta = img->is_top_field ? 2 : -2;
+            } else {
+              delta = 0;
+            }
+          }
+#endif
         }
 #endif
         psndrefframe = hc->p_snd_refFrArr[jf][if1];
@@ -6133,6 +6286,16 @@ void decode_one_InterChromaBlock(int uv) {
             int fw_bw = 0;  // fw
             int distance = calculate_distance(psndrefframe, fw_bw);
             delta2 = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+            if (hd->background_reference_enable &&
+                psndrefframe == img->num_of_references - 1) {
+              if (img->is_top_field != bk_img_is_top_field) {
+                delta2 = img->is_top_field ? 2 : -2;
+              } else {
+                delta2 = 0;
+              }
+            }
+#endif
           }
 #endif
         }
@@ -6144,6 +6307,16 @@ void decode_one_InterChromaBlock(int uv) {
             int fw_bw = 0;  // fw
             int distance = calculate_distance(psndrefframe, fw_bw);
             delta2 = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+            if (hd->background_reference_enable &&
+                psndrefframe == img->num_of_references - 1) {
+              if (img->is_top_field != bk_img_is_top_field) {
+                delta2 = img->is_top_field ? 2 : -2;
+              } else {
+                delta2 = 0;
+              }
+            }
+#endif
           }
 #endif
         }
@@ -6171,9 +6344,29 @@ void decode_one_InterChromaBlock(int uv) {
             int fw_bw = 0;  // fw
             int distance = calculate_distance(currMB->weighted_skipmode, fw_bw);
             delta2 = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+            if (hd->background_reference_enable &&
+                currMB->weighted_skipmode == img->num_of_references - 1) {
+              if (img->is_top_field != bk_img_is_top_field) {
+                delta2 = img->is_top_field ? 2 : -2;
+              } else {
+                delta2 = 0;
+              }
+            }
+#endif
 
             distance = calculate_distance(refframe, fw_bw);
             delta = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+            if (hd->background_reference_enable &&
+                refframe == img->num_of_references - 1) {
+              if (img->is_top_field != bk_img_is_top_field) {
+                delta = img->is_top_field ? 2 : -2;
+              } else {
+                delta = 0;
+              }
+            }
+#endif
           }
 #endif
           // center_y1 = (img->pix_c_y + joff) * f1 +
@@ -6273,21 +6466,33 @@ void decode_one_InterChromaBlock(int uv) {
           i1 = (img->pix_c_x + ioff) * f1 +
                Clip3(-32768, 32767,
                      mv_array[jf][if1][0] + dmh_pos[dmh_mode][0][0]);
+#if RD170_FIX_BG
+          j1 = Clip3(-32768, 32767,
+                     mv_array[jf][if1][1] + dmh_pos[dmh_mode][0][1]);
+          j1 = (img->pix_c_y + joff) * f1 + Clip3(-32768, 32767, j1 - delta);
+#else
           j1 = (img->pix_c_y + joff) * f1 +
                Clip3(-32768, 32767,
                      mv_array[jf][if1][1] + dmh_pos[dmh_mode][0][1]) -
                delta;
+#endif
           get_chroma_subpix_blk(img->predBlock, ioff, joff, step_h, step_v,
                                 i1 >> 3, j1 >> 3, i1 & 7, j1 & 7, p_ref);
 
           i1 = (img->pix_c_x + ioff) * f1 +
                Clip3(-32768, 32767,
                      mv_array[jf][if1][0] + dmh_pos[dmh_mode][1][0]);
+#if RD170_FIX_BG
+          j1 = Clip3(-32768, 32767,
+                     mv_array[jf][if1][1] + dmh_pos[dmh_mode][1][1]);
+          j1 = (img->pix_c_y + joff) * f1 + Clip3(-32768, 32767, j1 - delta);
+
+#else
           j1 = (img->pix_c_y + joff) * f1 +
                Clip3(-32768, 32767,
                      mv_array[jf][if1][1] + dmh_pos[dmh_mode][1][1]) -
                delta;
-
+#endif
           get_chroma_subpix_blk(img->predBlockTmp, ioff, joff, step_h, step_v,
                                 i1 >> 3, j1 >> 3, i1 & 7, j1 & 7, p_ref);
 #else
@@ -6408,6 +6613,16 @@ void decode_one_InterChromaBlock(int uv) {
           int fw_bw = 0;  // fw
           int distance = calculate_distance(fw_refframe, fw_bw);
           delta = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+          if (hd->background_reference_enable &&
+              fw_refframe == img->num_of_references - 1) {
+            if (img->is_top_field != bk_img_is_top_field) {
+              delta = img->is_top_field ? 2 : -2;
+            } else {
+              delta = 0;
+            }
+          }
+#endif
         }
 #endif
 #if HALF_PIXEL_CHROMA
@@ -6415,16 +6630,38 @@ void decode_one_InterChromaBlock(int uv) {
           int fw_bw = -1;  // bw
           int distance = calculate_distance(bw_refframe, fw_bw);
           delta2 = (distance % 4) == 0 ? 0 : img->is_top_field ? 2 : -2;
+#if FIX_CHROMA_FIELD_MV_BK_DIST
+          if (hd->background_reference_enable &&
+              bw_refframe == img->num_of_references - 1) {
+            if (img->is_top_field != bk_img_is_top_field) {
+              delta2 = img->is_top_field ? 2 : -2;
+            } else {
+              delta2 = 0;
+            }
+          }
+#endif
         }
 #endif
         i1 = (img->pix_c_x + ioff) * f1 + fw_mv_array[jf][ifx][0];
+#if FIX_CHROMA_FIELD_MV_CLIP
+        j1 = (img->pix_c_y + joff) * f1 +
+             Clip3(-32768, 32767, fw_mv_array[jf][ifx][1] - delta);
+#else
         j1 = (img->pix_c_y + joff) * f1 + fw_mv_array[jf][ifx][1] - delta;
+#endif
+        // B_img forward
         get_chroma_subpix_blk(img->predBlock, ioff, joff, step_h, step_v,
                               i1 >> 3, j1 >> 3, i1 & 7, j1 & 7,
                               hd->integerRefUV_fref[fw_refframe][uv]);
 
         i1 = (img->pix_c_x + ioff) * f1 + bw_mv_array[jf][ifx][0];
+#if FIX_CHROMA_FIELD_MV_CLIP
+        j1 = (img->pix_c_y + joff) * f1 +
+             Clip3(-32768, 32767, bw_mv_array[jf][ifx][1] - delta2);
+#else
         j1 = (img->pix_c_y + joff) * f1 + bw_mv_array[jf][ifx][1] - delta2;
+#endif
+        // B_img backward
         get_chroma_subpix_blk(img->predBlockTmp, ioff, joff, step_h, step_v,
                               i1 >> 3, j1 >> 3, i1 & 7, j1 & 7,
                               hd->integerRefUV_bref[fw_refframe][uv]);

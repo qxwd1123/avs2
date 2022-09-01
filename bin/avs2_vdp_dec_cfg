@@ -1,0 +1,112 @@
+//*******************************************************//
+//*****************avs2 reg config***********************//
+//*******************************************************//
+
+//===============swreg1_int===================//
+sw_dec_clkgate_e                 = 1'b0                          ;
+sw_dec_irq_dis                   = 1'b0                          ;
+sw_dec_timeout_e                 = 1'b0                          ;
+sw_buf_empty_en                  = 1'b0                          ;
+sw_cabac_error_mode              = 1'b0                          ;
+sw_colmv_error_mode              = 1'b0                          ;
+sw_fbc_e                         = 1'b0                          ;
+sw_allow_16x8_cp_flag            = 1'b0                          ;
+sw_colmv_compress_en             = 1'b0                          ;
+sw_error_mode                    = 1'b0                          ;
+
+//===============swreg2_sysctrl===================//
+sw_in_endian                     = 1'b0                          ;
+sw_in_swap32_e                   = 1'b0                          ;
+sw_in_swap64_e                   = 1'b0                          ;
+sw_str_endian                    = 1'b0                          ;
+sw_str_swap32_e                  = 1'b0                          ;
+sw_str_swap64_e                  = 1'b0                          ;
+sw_out_endian                    = 1'b0                          ;
+sw_out_swap32_e                  = 1'b0                          ;
+sw_out_cbcr_swap                 = 1'b0                          ;
+sw_error_info_en                 = 1'b0                          ;
+sw_rlc_mode_direct_write         = 1'b0                          ;
+sw_rlc_mode                      = 1'b0                          ;
+sw_strm_start_bit                = 7'h0                          ;
+sw_inter_error_prc_mode          = 1'b0                          ;
+sw_info_collect_en               = 1'b1                          ;
+sw_wait_reset_en                 = 1'b0                          ;
+sw_buspr_slot_disable            = 1'b0                          ;
+sw_colmv_mode                    = 1'b1                          ;
+sw_ycacherd_prior                = 1'b0                          ;
+
+//===============swreg3_virstride===================//
+sw_y_hor_virstride               = 10'h0                         ;
+fbc_head_hor_stride              = 10'h0                         ;
+sw_uv_hor_virstride              = 10'h0                         ;
+
+//===============swreg4~5_strm_rlc===================//
+sw_strm_rlc_base                 = 28'h16d0000                   ;
+
+//===============swreg7_decout_base===================//
+sw_decout_base                   = 28'h1740000                   ;   
+
+//===============swreg8_y_virstride===================//
+sw_y_virstride                   = 21'h0                         ;
+sw_payload_st_offset             = 28'h0                         ;
+
+//===============swreg9_yuv_virstride===================//
+sw_yuv_virstride                 = 22'h0                         ;
+sw_fbc_force_uncompress          = 1'b0                          ;
+
+//===============swreg10_swreg16_refer===================//
+sw_refer0_base                   = 28'h0                         ;  // sw_refer0_base
+sw_refer1_base                   = 28'h0                         ;  // default: sw_refer0_base + 1 * sw_oneframe_size
+sw_refer2_base                   = 28'h0                         ;  // default: sw_refer0_base + 2 * sw_oneframe_size
+sw_refer3_base                   = 28'h0                         ;  // default: sw_refer0_base + 3 * sw_oneframe_size
+sw_refer4_base                   = 28'h0                         ;  // default: sw_refer0_base + 4 * sw_oneframe_size
+sw_refer5_base                   = 28'h0                         ;  // default: sw_refer0_base + 5 * sw_oneframe_size
+sw_refer6_base                   = 28'h0                         ;  // default: sw_refer0_base + 6 * sw_oneframe_size
+
+//===============swreg41_rlcwrite_base===================//
+sw_rlcwrite_base                = 29'h1730000                    ; 
+
+//===============swreg42_head_base===================//
+sw_avs2_head_base               = 28'h0                          ; 
+
+//===============swreg44===================//
+sw_strmd_error_e                = 32'hfffffff                    ;
+
+//===============swreg66~67===================//
+sw_error_ref_base     	        = 28'ha90000		             ;
+sw_pic_idx_replace              = 5'h1f                          ;
+sw_error_prc_intra_mode_sel     = 1'b0                           ;
+sw_error_prc_deb_en             = 1'b0                           ;
+
+//===============swreg78~85===================//
+sw_colmv_cur_base               = 28'h0                          ;
+sw_colmv0_base                  = 28'h0                          ;  // sw_colmv0_base
+sw_colmv1_base                  = 28'h0                          ;  // default: sw_colmv0_base + 1 * sw_onecolmv_size
+sw_colmv2_base                  = 28'h0                          ;  // default: sw_colmv0_base + 2 * sw_onecolmv_size
+sw_colmv3_base                  = 28'h0                          ;  // default: sw_colmv0_base + 3 * sw_onecolmv_size
+sw_colmv4_base                  = 28'h0                          ;  // default: sw_colmv0_base + 4 * sw_onecolmv_size
+sw_colmv5_base                  = 28'h0                          ;  // default: sw_colmv0_base + 5 * sw_onecolmv_size
+sw_colmv6_base                  = 28'h0                          ;  // default: sw_colmv0_base + 6 * sw_onecolmv_size
+
+//===============swreg95===================//
+sw_scanlist_base                = 28'h0                          ;
+
+//===============swreg116~117===================//
+sw_roi_error_ctu_cal_en         = 1'b1                           ;
+sw_roi_x_ctu_offset_st          = 8'hff                          ;
+sw_roi_y_ctu_offset_st          = 8'hff                          ;
+sw_roi_x_ctu_offset_end         = 8'hff                          ;
+sw_roi_y_ctu_offset_end         = 8'hff                          ;
+
+//=============== set parameters ===================//
+sw_onecolmv_size                = 32'h0                          ;
+sw_oneframe_size                = 32'h0                          ;
+sw_ctu_idx_e                    = 1'b1                           ; // default 1, choose one kernel or double kernel
+// colmv_e = 0, sw_oneframe_size>=sw_yuv_virstride*16+sw_onecolmv_size; colmv_e = 1, sw_oneframe_size>=sw_yuv_virstride*16
+
+//===============SCALE DOWN===================//
+sw_scale_down_en                     = 1'b1;
+sw_scale_down_hor_ratio              = 1'd2;
+sw_scale_down_vrz_ratio              = 1'd2;
+sw_y_scale_down_tile8x8_hor_stride   = 20'h0;
+sw_uv_scale_down_tile8x8_hor_stride  = 20'h0;

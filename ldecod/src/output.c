@@ -95,29 +95,31 @@ static void write_yuv_uchar(FILE *p_out, byte *img, unsigned char *buf,
 }
 
 static void write_yuv_frame(FILE *p_out, byte *img, int img_length) {
-  int nSampleSize;
-  int shift1;
-  unsigned char *buf;
+  if (p_out) {
+    int nSampleSize;
+    int shift1;
+    unsigned char *buf;
 
-  if (input->output_bit_depth == 8) {
-    nSampleSize = 1;
-  } else if (input->output_bit_depth > 8) {
-    nSampleSize = 2;
-  }
-  shift1 = input->sample_bit_depth - input->output_bit_depth;
-  buf = malloc(img_length * nSampleSize);
+    if (input->output_bit_depth == 8) {
+      nSampleSize = 1;
+    } else if (input->output_bit_depth > 8) {
+      nSampleSize = 2;
+    }
+    shift1 = input->sample_bit_depth - input->output_bit_depth;
+    buf = malloc(img_length * nSampleSize);
 
-  if (!shift1 && input->output_bit_depth == 8) {  // 8bit input -> 8bit encode
-    write_yuv_uchar(p_out, img, buf, img_length);
-  } else if (!shift1 && input->output_bit_depth >
-                            8) {  // 10/12bit input -> 10/12bit encode
-    write_yuv_byte(p_out, img, buf, img_length);
-  } else if (shift1 &&
-             input->output_bit_depth == 8) {  // 8bit input -> 10/12bit encode
-    write_yuv_shift(p_out, img, buf, img_length, shift1);
+    if (!shift1 && input->output_bit_depth == 8) {  // 8bit input -> 8bit encode
+      write_yuv_uchar(p_out, img, buf, img_length);
+    } else if (!shift1 && input->output_bit_depth >
+                              8) {  // 10/12bit input -> 10/12bit encode
+      write_yuv_byte(p_out, img, buf, img_length);
+    } else if (shift1 &&
+               input->output_bit_depth == 8) {  // 8bit input -> 10/12bit encode
+      write_yuv_shift(p_out, img, buf, img_length, shift1);
+    }
+    free(buf);
+    fflush(p_out);
   }
-  free(buf);
-  fflush(p_out);
 }
 
 /*

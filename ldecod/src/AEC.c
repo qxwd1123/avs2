@@ -535,9 +535,12 @@ void readcuTypeInfo(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
     if (currMB->ui_MbBitSize >= B16X16_IN_BIT)
       if (img->inter_amp_enable) {
         if (curr_cuType == 2 || curr_cuType == 3) {
-          if (!biari_decode_symbol(dep_dp, pAMPCTX + 0)) {
-            curr_cuType =
-                curr_cuType * 2 + (!biari_decode_symbol(dep_dp, pAMPCTX + 1));
+          act_sym = 0;
+          if (!biari_decode_symbol(dep_dp,
+                                   pAMPCTX + 0)) {  // shape_of_partition_index
+            act_sym = (!biari_decode_symbol(dep_dp, pAMPCTX + 1));
+            curr_cuType = curr_cuType * 2 + act_sym;
+            act_sym = act_sym + 1;
           }
         }
       }
@@ -692,8 +695,10 @@ void readPdir(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
     pdir1 = biari_decode_symbol(dep_dp, pCTX + act_ctx + 1);
 
     if (pdir1 == 1) {
+      act_sym = pdir0 ? 0 : 2;
       pdir1 = pdir0;
     } else {
+      act_sym = pdir0 ? 1 : 3;
       pdir1 = 1 - pdir0;
     }
 
@@ -1227,7 +1232,11 @@ void readCBP(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
         currMB->cbp = cbp;
       }
     } else {
+#if RD170_FIX_BG
+      currMB->trans_size = 0;
+#else
       currMB->trans_size = 1;
+#endif
       currMB->cbp = cbp = 0;
     }
   } else {
@@ -2124,6 +2133,36 @@ int AEC_startcode_follows(int eos_bit) {
 
   return (bit == 1 ? 1 : 0);
 }
+
+#if BCBR
+int readBgFlag() {
+  Slice *currSlice = img->currentSlice;
+  DataPartition *dP;
+  SyntaxElement currSE;
+
+  dP = &(currSlice->partArr[0]);
+  currSE.reading = readBgFlag_AEC;
+  dP->readSyntaxElement(&currSE, dP, NULL, 0);
+#if TRACE
+  fprintf(hc->p_trace, "BgFlag = %3d\n", currSE.value1);
+  fflush(hc->p_trace);
+#endif
+
+  return currSE.value1;
+}
+
+void readBgFlag_AEC(SyntaxElement *se, DecodingEnvironmentPtr dep_dp,
+                    codingUnit *MB, int uiPosition) {
+  BiContextTypePtr pCTX;
+  int symbol;
+  pCTX = img->currentSlice->syn_ctx->bgblock_contexts;
+  symbol = 0;
+  symbol = biari_decode_symbol(dep_dp, pCTX);
+
+  se->value1 = symbol;
+}
+
+#endif
 
 int readSplitFlag(int uiBitSize) {
   Slice *currSlice = img->currentSlice;

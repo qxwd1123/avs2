@@ -244,11 +244,11 @@ void get_pix_offset(int blocktype, int uiBitSize, int i, int j, int *start_x,
 }
 
 /*!
-************************************************************************
-* \brief
-*    returns the x and y sample coordinates for a given MbAddress
-************************************************************************
-*/
+ ************************************************************************
+ * \brief
+ *    returns the x and y sample coordinates for a given MbAddress
+ ************************************************************************
+ */
 void get_mb_pos(int mb_addr, int *x, int *y, unsigned int uiBitSize) {
   int SizeScale = 1 << (uiBitSize - MIN_CU_SIZE_IN_BIT);
   *x = (mb_addr % (img->PicWidthInMbs)) / SizeScale;
@@ -259,12 +259,12 @@ void get_mb_pos(int mb_addr, int *x, int *y, unsigned int uiBitSize) {
 }
 
 /*!
-************************************************************************
-* \brief
-*    Check for available neighbouring blocks
-*    and set pointers in current codingUnit
-************************************************************************
-*/
+ ************************************************************************
+ * \brief
+ *    Check for available neighbouring blocks
+ *    and set pointers in current codingUnit
+ ************************************************************************
+ */
 void CheckAvailabilityOfNeighbors(codingUnit *currMB, unsigned int uiBitSize,
                                   unsigned int uiPositionInPic) {
   // added by lzhang 10.23
@@ -458,25 +458,25 @@ void getNeighbour(int xN, int yN, int luma, PixelPos *pix, int uiPosition,
 }
 
 /*!
-************************************************************************
-* \brief
-*    get neighbouring  get neighbouring 8x8 luma block
-* \param curr_mb_nr
-*   current codingUnit number (decoding order)
-* \param block_x
-*    input x block position
-* \param block_y
-*    input y block position
-* \param rel_x
-*    relative x position of neighbor
-* \param rel_y
-*    relative y position of neighbor
-* \param pix
-*    returns position informations
-* \author
-*    added by lzhang
-************************************************************************
-*/
+ ************************************************************************
+ * \brief
+ *    get neighbouring  get neighbouring 8x8 luma block
+ * \param curr_mb_nr
+ *   current codingUnit number (decoding order)
+ * \param block_x
+ *    input x block position
+ * \param block_y
+ *    input y block position
+ * \param rel_x
+ *    relative x position of neighbor
+ * \param rel_y
+ *    relative y position of neighbor
+ * \param pix
+ *    returns position informations
+ * \author
+ *    added by lzhang
+ ************************************************************************
+ */
 
 void getLuma8x8Neighbour(int b8_x, int b8_y, int rel_x, int rel_y,
                          PixelPos *pix, int uiPosition, int uiBitSize,

@@ -55,11 +55,12 @@ void reconstructCoefInfo(int compIdx, ALFParam *alfParam, int **filterCoeff,
 void checkFilterCoeffValue(int *filter, int filterLength, Boolean isChroma);
 void copyALFparam(ALFParam *dst, ALFParam *src);
 void filterOneCompRegion(byte *imgRes, byte *imgPad, int stride,
-                         Boolean isChroma, int yPos, int lcuHeight, int xPos,
-                         int lcuWidth, int **filterSet, int *mergeTable,
-                         byte **varImg, int sample_bit_depth, int isLeftAvail,
-                         int isRightAvail, int isAboveAvail, int isBelowAvail,
-                         int isAboveLeftAvail, int isAboveRightAvail);
+                         Boolean isChroma, int compIdx, int yPos, int lcuHeight,
+                         int xPos, int lcuWidth, int **filterSet,
+                         int *mergeTable, byte **varImg, int sample_bit_depth,
+                         int isLeftAvail, int isRightAvail, int isAboveAvail,
+                         int isBelowAvail, int isAboveLeftAvail,
+                         int isAboveRightAvail);
 void ExtendPicBorder(byte *img, int iHeight, int iWidth, int iMarginY,
                      int iMarginX, byte *imgExt);
 int getLCUCtrCtx_Idx(int ctu, int numLCUInPicWidth, int numLCUInPicHeight,

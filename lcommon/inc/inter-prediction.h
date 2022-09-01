@@ -43,10 +43,15 @@
 /// external function declaration
 /////////////////////////////////////////////////////////////////////////////
 #if Mv_Clip
+#if RD170_FIX_BG
+int scale_motion_vector(int motion_vector, int currblkref, int neighbourblkref,
+                        int ref, int delta2, int background_reference_enable);
+#else
 int scale_motion_vector(
     int motion_vector, int currblkref, int neighbourblkref, int ref,
     int delta2);  //, int currsmbtype, int neighboursmbtype, int block_y_pos,
                   // int curr_block_y,  int direct_mv);
+#endif
 #else
 int scale_motion_vector(
     int motion_vector, int currblkref, int neighbourblkref,
@@ -55,17 +60,32 @@ int scale_motion_vector(
 #endif
 void scalingMV(int *cur_mv_x, int *cur_mv_y, int curT, int ref_mv_x,
                int ref_mv_y, int refT, int factor_sign);
-
+#if SYM_MV_SCALE_FIX
+int scale_sym_mv(int mv, int dist_dst, int dist_src);
+#endif
 void get_reference_list_info(char *str);
 
 #if MV_SCALE
 int scale_mv(int mv, int dist_dst, int dist_src);
+#if FIX_LUMA_FIELD_MV_BK_DIST
+int scale_mv_y1(int mvy, int dist_dst, int dist_src, int fix_ref_idx1,
+                int fix_ref_idx2, int background_reference_enable);
+#else
 int scale_mv_y1(int mvy, int dist_dst, int dist_src);
+#endif
+
 int scale_mv_y2(int mvy, int dist_dst, int dist_src);
+#if RD170_FIX_BG
+int scale_motion_vector_y1(int mvy, int currblkref, int neighbourblkref,
+                           int ref, int background_reference_enable);
+int scale_motion_vector_y2(int mvy, int currblkref, int neighbourblkref,
+                           int ref, int background_reference_enable);
+#else
 int scale_motion_vector_y1(int mvy, int currblkref, int neighbourblkref,
                            int ref);
 int scale_motion_vector_y2(int mvy, int currblkref, int neighbourblkref,
                            int ref);
+#endif
 int scale_mv_direct(int mv, int dist_dst, int dist_src);
 void scale_mv_direct_x(int mv_x, int dist2, int dist4, int dist5, int *Fwmv_x,
                        int *Bwmv_x);
