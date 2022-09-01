@@ -46,12 +46,12 @@
 int scale_motion_vector(
     int motion_vector, int currblkref, int neighbourblkref, int ref,
     int delta2);  //, int currsmbtype, int neighboursmbtype, int block_y_pos,
-                  //int curr_block_y,  int direct_mv);
+                  // int curr_block_y,  int direct_mv);
 #else
 int scale_motion_vector(
     int motion_vector, int currblkref, int neighbourblkref,
     int ref);  //, int currsmbtype, int neighboursmbtype, int block_y_pos, int
-               //curr_block_y,  int direct_mv);
+               // curr_block_y,  int direct_mv);
 #endif
 void scalingMV(int *cur_mv_x, int *cur_mv_y, int curT, int ref_mv_x,
                int ref_mv_y, int refT, int factor_sign);

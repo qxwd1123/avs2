@@ -101,7 +101,7 @@ int CeilLog2Abs(int val) {
   return ret;
 }
 
-free_buffer(int end) {
+void free_buffer(int end) {
   int i;
 
   for (i = 0; i < end; i++) {

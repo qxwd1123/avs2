@@ -88,8 +88,9 @@
   1                                    // M1 related with mv-scaling function
 #define HALF_PIXEL_COMPENSATION_MVD 1  // MV scaling from FW->BW
 // Chroma components
-#define HALF_PIXEL_CHROMA 1  // chroma MV is scaled with luma MV for 4:2:0
-                             // format
+#define HALF_PIXEL_CHROMA \
+  1                         // chroma MV is scaled with luma MV for 4:2:0
+                            // format
 #define HALF_PIXEL_PSKIP 1  // half pixel compensation for p skip/direct
 
 #define INTERLACE_CODING_FIX 1  // HLS fix
@@ -191,8 +192,8 @@ AVS2 S2
 #define Check_Bitstream 1         // yuquanhe@hisilicon.com
 #define Wq_param_Clip 1           // yuquanhe@hisilicon.com
 #define RD1501_FIX_BG \
-  1  // luofalei flluo@pku.edu.cn , wlq15@mails.tsinghua.edu.cn ,
-     // Longfei.Wang@mediatek.com
+  1                // luofalei flluo@pku.edu.cn , wlq15@mails.tsinghua.edu.cn ,
+                   // Longfei.Wang@mediatek.com
 #define Mv_Rang 1  // yuquanhe@hisilicon.com ; he-yuan.lin@mstarsemi.com
 #define RD160_FIX_BG \
   1  // Longfei.Wang@mediatek.com ;fred.chiu@mediatek.com

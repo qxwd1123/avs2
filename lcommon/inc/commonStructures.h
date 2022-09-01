@@ -66,11 +66,11 @@ typedef enum { FALSE, TRUE } Boolean;
 typedef enum {
   FRAME_CODING,
   FIELD_CODING,
-} /*CodingType*/;
+} CodingType; /*CodingType*/
 
-typedef enum { FIELD, FRAME };
+enum { FIELD, FRAME };
 
-typedef enum { UVLC, AEC };
+enum { UVLC, AEC };
 
 typedef enum {
   SE_HEADER,
@@ -99,7 +99,7 @@ typedef enum {
   SE_EOS,
   SE_MAX_ELEMENTS  //!< number of maximum syntax elements, this MUST be the last
                    //!< one!
-} /*SE_type*/;
+} SE_type;
 
 typedef enum {
   BITS_HEADER,
@@ -115,24 +115,24 @@ typedef enum {
   MAX_BITCOUNTER_MB
 } BitCountType;
 
-typedef enum { INTRA_PRED_VER = 0, INTRA_PRED_HOR, INTRA_PRED_DC_DIAG };
+enum { INTRA_PRED_VER = 0, INTRA_PRED_HOR, INTRA_PRED_DC_DIAG };
 
-typedef enum SAOComponentIdx { SAO_Y = 0, SAO_Cb, SAO_Cr, NUM_SAO_COMPONENTS };
+enum SAOComponentIdx { SAO_Y = 0, SAO_Cb, SAO_Cr, NUM_SAO_COMPONENTS };
 
-typedef enum SAOMode {  // mode
+enum SAOMode {  // mode
   SAO_MODE_OFF = 0,
   SAO_MODE_MERGE,
   SAO_MODE_NEW,
   NUM_SAO_MODES
 };
 
-typedef enum SAOModeMergeTypes {
+enum SAOModeMergeTypes {
   SAO_MERGE_LEFT = 0,
   SAO_MERGE_ABOVE,
   NUM_SAO_MERGE_TYPES
 };
 
-typedef enum SAOModeNewTypes {  // NEW: types
+enum SAOModeNewTypes {  // NEW: types
   SAO_TYPE_EO_0,
   SAO_TYPE_EO_90,
   SAO_TYPE_EO_135,
@@ -600,7 +600,7 @@ typedef struct {
   int num_of_references;
 
   int auto_crop_right;  //<! Bug Fix: correct picture size for outputted
-                        //reconstructed pictures
+                        // reconstructed pictures
   int auto_crop_bottom;
   int buf_cycle;
   int picture_structure;
