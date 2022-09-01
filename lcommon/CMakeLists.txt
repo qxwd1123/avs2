@@ -2,9 +2,9 @@
 # copyright 2016-2016, Jiang GUO, Yimin ZHOU, UESTC           #
 ###############################################################
 
-INCLUDE_DIRECTORIES( inc )
+include_directories(inc)
 
-ADD_LIBRARY(lcommon STATIC
+add_library(lcommon STATIC
 inc/block_info.h
 inc/ComAdaptiveLoopFilter.h
 inc/commonStructures.h
@@ -27,4 +27,4 @@ src/memalloc.c
 src/transform.c
 )
 
-# SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../../lib)
+# set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/../../lib)

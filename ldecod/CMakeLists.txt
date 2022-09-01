@@ -2,10 +2,9 @@
 # copyright 2016-2016, Jiang GUO, Yimin ZHOU, UESTC           #
 ###############################################################
 
-INCLUDE_DIRECTORIES( inc
-../lcommon/inc)
+include_directories(inc ../lcommon/inc)
 
-SET(DIR_SRCS
+set(DIR_SRCS
 inc/AEC.h
 inc/annexb.h
 inc/biaridecod.h
@@ -35,5 +34,5 @@ src/vlc.c
 src/wquant.c
 )
 
-ADD_EXECUTABLE(ldecod ../bin/decoder.cfg ${DIR_SRCS})
-TARGET_LINK_LIBRARIES(ldecod lcommon)
+add_executable(ldecod ${DIR_SRCS})
+target_link_libraries(ldecod lcommon m)

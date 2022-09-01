@@ -2,10 +2,9 @@
 # copyright 2016-2016, Jiang GUO, Yimin ZHOU, UESTC           #
 ###############################################################
 
-INCLUDE_DIRECTORIES( inc
-../lcommon/inc)
+include_directories(inc ../lcommon/inc)
 
-SET(DIR_SRCS
+set(DIR_SRCS
 inc/adaptiveQP.h
 inc/AEC.h
 inc/biariencode.h
@@ -55,5 +54,5 @@ src/vlc.c
 src/wquant.c
 )
 
-ADD_EXECUTABLE(lencod ../bin/encoder_ai.cfg ../bin/encoder_ldp.cfg ../bin/encoder_ra.cfg ${DIR_SRCS})
-TARGET_LINK_LIBRARIES(lencod lcommon)
+add_executable(lencod ${DIR_SRCS})
+target_link_libraries(lencod lcommon m)
