@@ -10,7 +10,9 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMAKE_C_COMPILER": "gcc",
-                "CMAKE_CXX_COMPILER": "g++"
+                "CMAKE_CXX_COMPILER": "g++",
+                "CONFIG_HW": "ON",
+                "CONFIG_HW_DEQUANT": "ON"
             },
             "warnings": {
                 "dev": true,

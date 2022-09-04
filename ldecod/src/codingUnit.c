@@ -65,6 +65,10 @@
 #include "wquant.h"
 #endif
 
+#if CONFIG_HW
+#include "hw.h"
+#endif
+
 extern short IQ_SHIFT[80];
 extern unsigned short IQ_TAB[80];
 
@@ -4002,6 +4006,7 @@ int BType2CtxRef(int btype) {
 * Attention:
 *************************************************************************
 */
+__attribute__((no_sanitize_address))
 void readReferenceIndex(unsigned int uiBitSize, unsigned int uiPositionInPic) {
   int k;
   codingUnit *currMB = &img->mb_data[uiPositionInPic];
@@ -4215,6 +4220,7 @@ void pmvr_mv_derivation(int mv[2], int mvd[2], int mvp[2]) {
 * Attention:
 *************************************************************************
 */
+__attribute__((no_sanitize_address))
 void readMotionVector(unsigned int uiBitSize, unsigned int uiPositionInPic) {
   int i, j, k, l, m, n;
   int curr_mvd;
@@ -5398,6 +5404,21 @@ void readBlockCoeffs(unsigned int uiPosition) {
     }
   }
 
+#if CONFIG_HW_DEQUANT
+  if (currMB->cuType == I16MB || currMB->trans_size == 0)
+    hw_dequant_stat_update_dqcoeff(1 << currMB->ui_MbBitSize,
+                                   1 << currMB->ui_MbBitSize, img->resiY);
+  else if (iHor)
+    hw_dequant_stat_update_dqcoeff(1 << currMB->ui_MbBitSize,
+                                   1 << (currMB->ui_MbBitSize - 2), img->resiY);
+  else if (iVer)
+    hw_dequant_stat_update_dqcoeff(1 << (currMB->ui_MbBitSize - 2),
+                                   1 << currMB->ui_MbBitSize, img->resiY);
+  else
+    hw_dequant_stat_update_dqcoeff(1 << (currMB->ui_MbBitSize - 1),
+                                   1 << (currMB->ui_MbBitSize - 1), img->resiY);
+#endif
+
   // Adaptive frequency weighting quantization
 #if FREQUENCY_WEIGHTING_QUANTIZATION
   if (currMB->ui_MbBitSize == B8X8_IN_BIT) {
@@ -5568,6 +5589,14 @@ void readBlockCoeffs(unsigned int uiPosition) {
       }  // end k=0~64
     }
   }
+#if CONFIG_HW_DEQUANT
+  hw_dequant_stat_update_dqcoeff_uv(1 << (currMB->ui_MbBitSize - 1),
+                                    1 << (currMB->ui_MbBitSize - 1),
+                                    img->resiUV[0]);
+  hw_dequant_stat_update_dqcoeff_uv(1 << (currMB->ui_MbBitSize - 1),
+                                    1 << (currMB->ui_MbBitSize - 1),
+                                    img->resiUV[1]);
+#endif
 }
 
 /*

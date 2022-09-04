@@ -128,6 +128,10 @@
 #define _S_IREAD 0000400  /* read permission, owner */
 #define _S_IWRITE 0000200 /* write permission, owner */
 
+#if CONFIG_HW
+#include "hw.h"
+#endif
+
 extern FILE *bits;
 extern byte *seq_checker_buf;
 
@@ -427,6 +431,10 @@ int main(int argc, char **argv) {
 
   hd->eos = 0;
 
+#if CONFIG_HW
+  hw_global_init();
+#endif
+
   init_conf(argc, argv);
 
   OpenBitstreamFile(input->infile);
@@ -506,9 +514,19 @@ int main(int argc, char **argv) {
 
   do {
     while ((decode_one_frame(snr) != EOS) && (!IsEndOfBitstream()))
-      ;
+
+#if CONFIG_HW
+      hw_global_frame_next();
+#endif
+
+    ;
 
   } while (!IsEndOfBitstream());
+
+#if CONFIG_HW
+  hw_global_frame_done();
+#endif
+
 #if RD170_FIX_BG
   if (input->alf_enable && alfParAllcoated == 1) {
     ReleaseAlfGlobalBuffer();
@@ -616,6 +634,10 @@ int main(int argc, char **argv) {
 
 #if TRACE
   fclose(hc->p_trace);
+#endif
+
+#if CONFIG_HW
+  hw_global_destroy();
 #endif
 
   free_mem2Dint(AVS_SCAN4x16);
@@ -805,6 +827,10 @@ void init_conf(int numpar, char **config_str) {
       error(hc->errortext, 500);
     }
   }
+
+#if CONFIG_HW
+  hw_global_set_input_fn(input->infile);
+#endif
 
   fprintf(stdout,
           "--------------------------------------------------------------------"
